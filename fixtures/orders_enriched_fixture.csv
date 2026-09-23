@@ -1,0 +1,7 @@
+order_id,customer_id,seller_id,order_purchase_timestamp,order_status,customer_state,product_category,price,freight_value,review_score,batch_month
+ord_0001,cust_001,seller_A,2018-06-03 10:15:00,delivered,SP,electronics,199.90,15.00,5,2018-06
+ord_0002,cust_002,seller_B,2018-06-05 14:22:00,delivered,RJ,furniture,89.50,20.00,4,2018-06
+ord_0003,cust_003,seller_A,2018-07-11 09:05:00,delivered,MG,electronics,249.00,18.00,3,2018-07
+ord_0004,cust_004,seller_C,2018-07-20 16:40:00,shipped,SP,toys,45.00,10.00,,2018-07
+ord_0005,cust_005,seller_B,2018-08-02 11:30:00,delivered,RJ,furniture,120.00,22.00,5,2018-08
+ord_0006,cust_006,seller_D,2018-08-15 08:50:00,canceled,BA,electronics,300.00,25.00,,2018-08

@@ -1,0 +1,26 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+*.log
+
+# Raw data files are large and shouldn't live in git — they go to MinIO instead.
+# Keep the folder structure (via .gitkeep) but not the actual data.
+raw/csv/*
+!raw/csv/.gitkeep
+raw/json/*
+!raw/json/.gitkeep
+raw/clickstream/*
+!raw/clickstream/.gitkeep
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Airflow
+airflow/logs/
+
+SETUP.md

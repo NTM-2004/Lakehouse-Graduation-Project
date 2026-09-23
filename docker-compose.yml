@@ -1,0 +1,152 @@
+version: "3.8"
+
+# ---------------------------------------------------------------------------
+# E-commerce Data Lakehouse — shared dev stack (Bước 1 của kế hoạch)
+# Run this identically on every teammate's laptop: `docker compose up -d`
+# ---------------------------------------------------------------------------
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.3
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./csv_pipeline:/opt/airflow/csv_pipeline
+    - ./json_pipeline:/opt/airflow/json_pipeline
+    - ./clickstream_pipeline:/opt/airflow/clickstream_pipeline
+    - ./dbt:/opt/airflow/dbt
+  depends_on:
+    - airflow-postgres
+
+services:
+
+  # ---------------- Object storage (Raw/Bronze/Silver/Gold) ----------------
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Creates the `lakehouse` bucket + raw/bronze/silver/gold "folders" on first boot
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb -p local/lakehouse/raw local/lakehouse/bronze local/lakehouse/silver local/lakehouse/gold &&
+      echo 'buckets ready'
+      "
+
+  # ---------------- Catalog: Hive Metastore + its own Postgres ----------------
+  hive-metastore-db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+    volumes:
+      - hive-metastore-db-data:/var/lib/postgresql/data
+
+  hive-metastore:
+    image: bitsondatadev/hive-metastore:latest
+    # NOTE: verify this image/tag still works when you set up — Hive Metastore
+    # images change often. If it doesn't start cleanly, this is exactly the
+    # kind of thing to debug together in your first sync session.
+    depends_on:
+      - hive-metastore-db
+    environment:
+      METASTORE_DB_HOSTNAME: hive-metastore-db
+      METASTORE_TYPE: postgres
+    ports:
+      - "9083:9083"
+
+  # ---------------- Processing: Spark (client, used via spark-submit) ----------------
+  spark:
+    image: tabulario/spark-iceberg:latest
+    # This image ships PySpark + Iceberg + Hadoop-AWS jars preconfigured,
+    # which saves you from hand-assembling jar versions.
+    depends_on:
+      - hive-metastore
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      SPARK_HOME: /opt/spark
+    volumes:
+      - ./csv_pipeline:/home/csv_pipeline
+      - ./json_pipeline:/home/json_pipeline
+      - ./clickstream_pipeline:/home/clickstream_pipeline
+      - ./raw:/home/raw
+    ports:
+      - "8888:8888" # optional notebook UI if the image exposes one
+    tty: true
+
+  # ---------------- Query engine ----------------
+  dremio:
+    image: dremio/dremio-oss:latest
+    ports:
+      - "9047:9047"   # Web UI
+      - "31010:31010" # JDBC
+      - "32010:32010" # Arrow Flight SQL (used by Streamlit)
+    volumes:
+      - dremio-data:/opt/dremio/data
+
+  # ---------------- Orchestration ----------------
+  airflow-postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate &&
+        airflow users create \
+          --username admin --password admin \
+          --firstname A --lastname Admin \
+          --role Admin --email admin@example.com
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      - airflow-init
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      - airflow-init
+
+volumes:
+  minio-data:
+  hive-metastore-db-data:
+  dremio-data:
+  airflow-postgres-data:
