@@ -23,4 +23,11 @@ dbt/logs/
 # Airflow
 airflow/logs/
 
+# keep libs folder
+spark_lib/*
+!spark_lib/.gitkeep
+hive_lib/*
+!hive_lib/.gitkeep
+
 SETUP.md
+AGENTS.md
