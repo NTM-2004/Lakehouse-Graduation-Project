@@ -79,6 +79,7 @@ services:
       DB_DRIVER: "postgres"
       SERVICE_OPTS: "-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/metastore -Djavax.jdo.option.ConnectionUserName=hive -Djavax.jdo.option.ConnectionPassword=hive"
       SKIP_SCHEMA_INIT: "true"
+      IS_RESUME: "true"
     volumes:
       - ./hive_lib/hadoop-aws-3.2.0.jar:/opt/hive/lib/hadoop-aws-3.2.0.jar
       - ./hive_lib/aws-java-sdk-bundle-1.11.563.jar:/opt/hive/lib/aws-java-sdk-bundle-1.11.563.jar
@@ -163,3 +164,7 @@ volumes:
   hive-metastore-db-data:
   dremio-data:
   airflow-postgres-data:
+
+networks:
+  default:
+    name: lakehouse-net
