@@ -1,0 +1,30 @@
+an_id,sub_code,table_name,description,expected_count
+AN-01,D4,orders,Ngày giao khách sớm hơn ngày giao hãng,23
+AN-02,D3,orders,Ngày giao hãng sớm hơn ngày mua,166
+AN-02,D6,orders,Ngày giao hãng sớm hơn ngày duyệt,1359
+AN-03,D1,orders,Trạng thái delivered thiếu ngày giao khách,8
+AN-03,D2,orders,Trạng thái khác delivered có ngày giao khách,6
+AN-03,D5,orders,Trạng thái delivered thiếu ngày duyệt,14
+AN-03,D7,orders,Trạng thái delivered thiếu ngày giao hãng,2
+AN-04,,orders,Đơn không có dòng hàng,756
+AN-05,I1,order_items,Hạn giao hãng năm 2020,4
+AN-06,P1_P2_P3,order_payments,Thanh toán bất thường (2 not_defined; 8 giá trị 0; 2 kỳ trả góp 0),10
+AN-07,,order_payments,Tổng thanh toán lệch tổng giá và cước hơn 1 xu,303
+AN-08,,order_reviews,Mã review dùng cho nhiều đơn,779
+AN-09,R2,order_reviews,Đánh giá tạo trước ngày mua,45
+AN-10,PR1,products,Không có danh mục,610
+AN-10,missing_translation_categories,product_category_translation,Số danh mục thiếu bản dịch (kiểm thử B-301),2
+AN-10,missing_translation_products,products,Số sản phẩm thuộc danh mục thiếu bản dịch (kiểm thử B-307),13
+AN-10,PR2,products,Cân nặng bằng 0,4
+AN-10,PR3,products,Thiếu ít nhất một kích thước,2
+AN-11,,sellers,Tên thành phố người bán cần chuẩn hóa,38
+AN-12,,geolocation,Dòng tọa độ trùng nguyên văn,261831
+AN-13,C1,leads,Deal chốt trước ngày liên hệ đầu,1
+AN-14,orders_source_excluded,orders,Số đơn giao sau ngày chốt ở nguồn (đã để trống tại Silver),59
+AN-14,reviews_source_excluded,order_reviews,Số đánh giá trả lời sau ngày chốt ở nguồn (đã để trống tại Silver),666
+AN-14,silver_post_cutoff_expected,orders,Kỳ vọng mốc sau ngày chốt tại tầng Silver (phải bằng 0),0
+AN-15,E1,clickstream_events,Phiên có sự kiện sau sự kiện mua,453
+AN-15,E2,clickstream_events,Sự kiện chung giây trong cùng phiên,6
+AN-16,shipped_overdue_undelivered,orders,Đơn shipped chưa có ngày giao khách quá hạn tại ngày chốt,1103
+AN-16,post_cutoff_delivered_carrier,orders,Đơn giao sau ngày chốt đã giao hãng,57
+AN-16,total_overdue_undelivered,orders,Tổng đơn quá hạn chưa giao tại ngày chốt (GT-11 và Requirement),1160

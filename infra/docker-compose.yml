@@ -1,0 +1,292 @@
+# ===========================================================================
+# E-commerce Data Lakehouse - Infrastructure Stack (B-011)
+# Phiên bản theo Design Deployment & Requirement v3 (F16)
+# ===========================================================================
+
+networks:
+  lakehouse-net:
+    driver: bridge
+
+volumes:
+  minio-data:
+  hive-metastore-db-data:
+  dremio-data:
+  airflow-postgres-data:
+
+services:
+
+  # ---------------- 1. Object Storage: MinIO ----------------
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio-data:/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
+  # ---------------- 2. MinIO Init: Tạo bucket & thư mục 4 tầng ----------------
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - ./minio_init.sh:/minio_init.sh:ro
+    networks:
+      - lakehouse-net
+    entrypoint: ["/bin/sh", "/minio_init.sh"]
+
+  # ---------------- 3. Catalog: Metastore Database (PostgreSQL 13.15) ----------------
+  hive-metastore-db:
+    image: postgres:13.15
+    container_name: hive-metastore-db
+    environment:
+      POSTGRES_USER: ${HMS_DB_USER:-hive}
+      POSTGRES_PASSWORD: ${HMS_DB_PASSWORD:-hive}
+      POSTGRES_DB: ${HMS_DB_NAME:-metastore}
+    volumes:
+      - hive-metastore-db-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${HMS_DB_USER:-hive} -d ${HMS_DB_NAME:-metastore}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------------- 4. Catalog: Hive Metastore Service 3.1.3 ----------------
+  hive-metastore:
+    image: apache/hive:3.1.3
+    container_name: hive-metastore
+    depends_on:
+      hive-metastore-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      SERVICE_NAME: "metastore"
+      DB_DRIVER: "postgres"
+      SERVICE_OPTS: "-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/${HMS_DB_NAME:-metastore} -Djavax.jdo.option.ConnectionUserName=${HMS_DB_USER:-hive} -Djavax.jdo.option.ConnectionPassword=${HMS_DB_PASSWORD:-hive}"
+      IS_RESUME: "true"
+    volumes:
+      - ./jars/hadoop-aws-3.2.0.jar:/opt/hive/lib/hadoop-aws-3.2.0.jar:ro
+      - ./jars/aws-java-sdk-bundle-1.11.563.jar:/opt/hive/lib/aws-java-sdk-bundle-1.11.563.jar:ro
+      - ./jars/postgresql-42.5.4.jar:/opt/hive/lib/postgresql-9.4.1208.jre7.jar:ro
+      - ./hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+    ports:
+      - "9083:9083"
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9083' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
+  # ---------------- 5. Compute: Apache Spark 3.5.0 (Iceberg 1.4.2) ----------------
+  spark:
+    image: tabulario/spark-iceberg:3.5.0_1.4.2
+    container_name: spark
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-minioadmin}
+      AWS_REGION: us-east-1
+      SPARK_HOME: /opt/spark
+    volumes:
+      - ../spark:/home/spark
+      - ../raw_prep:/home/raw_prep
+      - ../raw:/home/raw
+      - ./spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar:ro
+      - ./jars/aws-java-sdk-bundle-1.12.261.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.261.jar:ro
+    ports:
+      - "8888:8888"
+      - "4040:4040"
+    networks:
+      - lakehouse-net
+    tty: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888 || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+
+  # ---------------- 6. Query Engine: Dremio OSS 25.0.0 ----------------
+  dremio:
+    image: dremio/dremio-oss:25.0.0
+    container_name: dremio
+    depends_on:
+      minio:
+        condition: service_healthy
+      hive-metastore:
+        condition: service_healthy
+    ports:
+      - "9047:9047"
+      - "31010:31010"
+      - "32010:32010"
+    volumes:
+      - dremio-data:/opt/dremio/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9047 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+
+  # ---------------- 7. Orchestration DB: Airflow Metadata (PostgreSQL 14.12) ----------------
+  airflow-postgres:
+    image: postgres:14.12
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME:-airflow}
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER:-airflow} -d ${AIRFLOW_DB_NAME:-airflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------------- 8. Orchestration: Apache Airflow 2.9.3 (Webserver + Scheduler) ----------------
+  airflow:
+    build:
+      context: ..
+      dockerfile: infra/airflow.Dockerfile
+    container_name: airflow
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+      spark:
+        condition: service_healthy
+      dremio:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER:-airflow}:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_DB_NAME:-airflow}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqnzq8=}
+      AIRFLOW__CORE__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-lakehouse_secret_key_airflow_2026}
+      AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER:-admin}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      AIRFLOW_ADMIN_FIRSTNAME: ${AIRFLOW_ADMIN_FIRSTNAME:-Minh}
+      AIRFLOW_ADMIN_LASTNAME: ${AIRFLOW_ADMIN_LASTNAME:-Admin}
+      AIRFLOW_ADMIN_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-minh.lead@lakehouse.local}
+      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:-admin}
+      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:-admin12345}
+      DREMIO_HOST: ${DREMIO_HOST:-dremio}
+      DREMIO_FLIGHT_PORT: ${DREMIO_FLIGHT_PORT:-32010}
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../dbt:/opt/airflow/dbt
+      - ../raw_prep:/opt/airflow/raw_prep
+      - ../spark:/opt/airflow/spark
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    networks:
+      - lakehouse-net
+    entrypoint: >
+      /bin/bash -c "
+      airflow db migrate &&
+      airflow users create \
+        --username $${AIRFLOW_ADMIN_USER} --password $${AIRFLOW_ADMIN_PASSWORD} \
+        --firstname $${AIRFLOW_ADMIN_FIRSTNAME} --lastname $${AIRFLOW_ADMIN_LASTNAME} \
+        --role Admin --email $${AIRFLOW_ADMIN_EMAIL} || true &&
+      airflow scheduler &
+      exec airflow webserver
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+
+  # ---------------- 9. Serving: Streamlit Application ----------------
+  streamlit:
+    build:
+      context: ..
+      dockerfile: infra/streamlit.Dockerfile
+    container_name: streamlit
+    depends_on:
+      dremio:
+        condition: service_healthy
+    environment:
+      DREMIO_HOST: ${DREMIO_HOST:-dremio}
+      DREMIO_FLIGHT_PORT: ${DREMIO_FLIGHT_PORT:-32010}
+      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:-admin}
+      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:-admin12345}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+    volumes:
+      - ../streamlit:/app
+    ports:
+      - "8501:8501"
+    networks:
+      - lakehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8501/_stcore/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 4
+    deploy:
+      resources:
+        limits:
+          memory: 1024M

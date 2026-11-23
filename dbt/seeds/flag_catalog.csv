@@ -1,0 +1,20 @@
+flag_id,table_name,condition,an_id,kpi_impact
+D1,orders,"Trạng thái delivered, không có ngày giao khách",AN-03,Loại khỏi KPI giao hàng
+D2,orders,"Trạng thái khác delivered, có ngày giao khách",AN-03,Loại khỏi KPI giao hàng
+D3,orders,Ngày giao hãng sớm hơn ngày mua,AN-02,Không loại
+D4,orders,Ngày giao khách sớm hơn ngày giao hãng,AN-01,Loại khỏi KPI giao hàng
+D5,orders,"delivered, không có ngày duyệt",AN-03,Không loại
+D6,orders,Ngày giao hãng sớm hơn ngày duyệt,AN-02,Không loại
+D7,orders,"delivered, không có ngày giao hãng",AN-03,Không loại
+I1,order_items,Hạn giao hãng cách ngày mua LỚN HƠN 148 ngày lịch,AN-05,Không loại
+P1,order_payments,Loại thanh toán not_defined,AN-06,Không loại
+P2,order_payments,payment_value bằng 0,AN-06,Không loại
+P3,order_payments,Số kỳ trả góp bằng 0,AN-06,Không loại
+R2,order_reviews,Ngày tạo đánh giá sớm hơn ngày mua (so theo ngày),AN-09,Loại khỏi Điểm đánh giá trung bình
+PR1,products,Không có danh mục,AN-10,Không loại
+PR2,products,Cân nặng bằng 0 (giá trị thành NULL),AN-10,Không loại
+PR3,products,Thiếu ít nhất một kích thước,AN-10,Không loại
+C1,leads,Ngày chốt deal sớm hơn ngày liên hệ đầu (so theo ngày),AN-13,Loại khỏi KPI thời gian chốt
+E1,clickstream_events,event_ts lớn hơn event_ts của sự kiện purchase cùng phiên,AN-15,Không loại
+E2,clickstream_events,"Cùng phiên, cùng event_ts với một sự kiện khác",AN-15,Không loại
+T1,mọi bảng,Có giá trị nhưng không ép được kiểu,Không thuộc AN,"Không loại; giá trị NULL bị bỏ khi tính"
