@@ -1,3 +1,10 @@
+{{
+  config(
+    materialized='table',
+    schema='silver'
+  )
+}}
+
 {#
   dbt/models/silver/leads_rejects.sql - Bảng reject mức 1 cho silver.leads (B-318)
   Tác giả phụ trách: Hoàng | Reviewer: Kiên
@@ -9,8 +16,6 @@
     (mql_id, first_contact_date, landing_page_id) chuyển vào silver.leads_rejects.
   - Giữ toàn bộ các cột Bronze của dòng và bổ sung cột reject_reason.
 #}
-
-{{ config(materialized='table') }}
 
 WITH parsed_bronze AS (
     SELECT
@@ -28,7 +33,7 @@ WITH parsed_bronze AS (
         NULLIF(TRIM(src.first_contact_date), '') AS clean_first_contact_date,
         NULLIF(TRIM(src.landing_page_id), '') AS clean_landing_page_id,
         {{ safe_cast("NULLIF(TRIM(src.first_contact_date), '')", 'DATE') }} AS casted_first_contact_date
-    FROM {{ source('bronze', 'marketing_leads') }} src
+    FROM {{ source('bronze_marketing', 'marketing_leads') }} src
     WHERE src.is_parsed = true
 ),
 

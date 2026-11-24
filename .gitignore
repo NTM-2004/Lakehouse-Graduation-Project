@@ -39,4 +39,6 @@ hive_lib/*
 
 SETUP.md
 JSON_CHECKLIST.md
+temp/
+
 

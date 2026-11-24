@@ -9,7 +9,12 @@
   Không có seller_id (giữ đúng Out of scope: không nối Marketing với đơn hàng).
 #}
 
-{{ config(materialized='table') }}
+{{
+  config(
+    materialized='table',
+    schema='gold'
+  )
+}}
 
 SELECT
     l.mql_id,

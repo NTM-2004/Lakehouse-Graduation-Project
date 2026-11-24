@@ -10,7 +10,12 @@
   Cờ mẫu nhỏ: nhóm dưới 30 deal (n_obs = n_leads_with_deal).
 #}
 
-{{ config(materialized='table') }}
+{{
+  config(
+    materialized='table',
+    schema='gold'
+  )
+}}
 
 WITH base AS (
     SELECT

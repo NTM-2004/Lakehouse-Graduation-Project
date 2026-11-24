@@ -1,36 +1,70 @@
 version: 2
 
+sources:
+  - name: bronze_marketing
+    description: "Nguồn tầng Bronze của Marketing Funnel (hive.bronze.marketing_leads)"
+    database: hive
+    schema: bronze
+    tables:
+      - name: marketing_leads
+        description: "Bảng Iceberg Bronze nạp từ raw/marketing_funnel/<batch_id>/marketing_leads.jsonl (B-203)"
+
 models:
   - name: leads
     description: >
-      Bảng Silver Marketing Funnel đã duỗi phẳng từ bronze.marketing_leads (B-318).
-      Grain: 1 dòng = 1 lead (mql_id), giữ bản chụp batch_seq lớn nhất.
+      Bảng Silver Marketing Funnel đã duỗi phẳng từ bronze_marketing.marketing_leads (B-318).
+      Grain: 1 dòng = 1 lead (mql_id), giữ bản chụp batch_seq lớn nhất,
+      gắn cờ C1, T1 và lưu truy vết source_file, batch_id (F17).
+    tests:
+      - leads_bronze_no_unparsed:
+          config:
+            severity: error
+      - leads_counts_match_bronze:
+          config:
+            severity: error
+      - leads_bronze_replay_guardrail:
+          config:
+            severity: error
+      - leads_no_post_cutoff_dates:
+          config:
+            severity: error
+      - leads_an13_expected_counts:
+          config:
+            severity: warn
+      - leads_final_batch_counts:
+          config:
+            severity: warn
     columns:
       - name: mql_id
         description: "Khóa chính của lead."
         tests:
-          - unique:
-              severity: error
           - not_null:
-              severity: error
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
 
       - name: first_contact_date
         description: "Ngày liên hệ đầu tiên của lead."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
 
       - name: landing_page_id
         description: "Mã landing page (giữ cột, không dùng cho KPI)."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
 
       - name: origin
         description: "Nguồn lead (chữ thường; thiếu -> 'unknown')."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
           - accepted_values:
               values:
                 - organic_search
@@ -43,13 +77,15 @@ models:
                 - other
                 - display
                 - other_publicities
-              severity: error
+              config:
+                severity: error
 
       - name: has_deal
         description: "true khi lead đã chốt deal (nhóm deal ở Bronze khác NULL)."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
 
       - name: seller_id
         description: "Khóa mềm sang silver.sellers (~47,98% khớp); duy nhất khi khác NULL."
@@ -69,20 +105,28 @@ models:
         description: "Tệp nguồn của bản chụp được giữ (F17)."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
 
       - name: batch_id
         description: "Batch của bản chụp được giữ (F17)."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error
 
   - name: leads_rejects
     description: >
       Bảng reject mức 1 của silver.leads (B-318): lưu các dòng is_parsed = true
       nhưng thiếu/hỏng mql_id, first_contact_date hoặc landing_page_id.
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
     columns:
       - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
         tests:
           - not_null:
-              severity: error
+              config:
+                severity: error

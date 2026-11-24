@@ -1,20 +1,26 @@
+{{
+  config(
+    materialized='table',
+    schema='silver'
+  )
+}}
+
 {#
   dbt/models/silver/leads.sql - Mô hình Silver cho Marketing Funnel đã duỗi phẳng (B-318)
   Tác giả phụ trách: Hoàng | Reviewer: Kiên
+  Mẫu triển khai: M-03
   Tham chiếu:
   - Design Bronze, Silver v2 (Mục IV: silver.leads; Bảng tra cờ; Cột bắt buộc mức 1)
   - dbt/schema_contract.yml (silver_tables.leads - 21 cột)
 
   Luồng xử lý:
-  1. Lọc is_parsed = true từ bronze.marketing_leads (dòng lỗi JSON giữ ở Bronze, kiểm thử error F09).
+  1. Lọc is_parsed = true từ bronze_marketing.marketing_leads (dòng lỗi JSON giữ ở Bronze, kiểm thử error F09).
   2. Tách lỗi mức 1 (thiếu/hỏng mql_id, first_contact_date, landing_page_id) bằng reject_rows macro
      TRƯỚC KHI gọi latest_snapshot (theo quy tắc của latest_snapshot.sql).
   3. Loại trùng theo mql_id, giữ bản chụp có batch_seq lớn nhất (127 lead phát lại kèm deal).
   4. Duỗi phẳng nhóm deal, ép kiểu an toàn (safe_cast + cờ T1), chuẩn hóa 'unknown' cho cột phân loại,
      gắn cờ C1 (WON_BEFORE_CONTACT) khi CAST(won_date AS DATE) < first_contact_date.
 #}
-
-{{ config(materialized='table') }}
 
 WITH parsed_bronze AS (
     SELECT
@@ -29,7 +35,7 @@ WITH parsed_bronze AS (
         NULLIF(TRIM(src.first_contact_date), '') AS clean_first_contact_date,
         NULLIF(TRIM(src.landing_page_id), '') AS clean_landing_page_id,
         {{ safe_cast("NULLIF(TRIM(src.first_contact_date), '')", 'DATE') }} AS casted_first_contact_date
-    FROM {{ source('bronze', 'marketing_leads') }} src
+    FROM {{ source('bronze_marketing', 'marketing_leads') }} src
     WHERE src.is_parsed = true
 ),
 
@@ -163,20 +169,20 @@ typed AS (
 )
 
 SELECT
-    mql_id,
+    CAST(mql_id AS VARCHAR) AS mql_id,
     first_contact_date,
-    landing_page_id,
-    origin,
+    CAST(landing_page_id AS VARCHAR) AS landing_page_id,
+    CAST(origin AS VARCHAR) AS origin,
     has_deal,
-    seller_id,
-    sdr_id,
-    sr_id,
+    CAST(seller_id AS VARCHAR) AS seller_id,
+    CAST(sdr_id AS VARCHAR) AS sdr_id,
+    CAST(sr_id AS VARCHAR) AS sr_id,
     won_date,
-    business_segment,
-    lead_type,
-    lead_behaviour_profile,
-    average_stock,
-    business_type,
+    CAST(business_segment AS VARCHAR) AS business_segment,
+    CAST(lead_type AS VARCHAR) AS lead_type,
+    CAST(lead_behaviour_profile AS VARCHAR) AS lead_behaviour_profile,
+    CAST(average_stock AS VARCHAR) AS average_stock,
+    CAST(business_type AS VARCHAR) AS business_type,
     has_company,
     has_gtin,
     declared_product_catalog_size,
@@ -189,6 +195,6 @@ SELECT
         ("T1:declared_product_catalog_size", "raw_catalog_size IS NOT NULL AND declared_product_catalog_size IS NULL"),
         ("T1:declared_monthly_revenue", "raw_monthly_revenue IS NOT NULL AND declared_monthly_revenue IS NULL")
     ]) }} AS dq_flag,
-    source_file,
-    batch_id
+    CAST(source_file AS VARCHAR) AS source_file,
+    CAST(batch_id AS VARCHAR) AS batch_id
 FROM typed
