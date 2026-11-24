@@ -5,6 +5,7 @@
 
 networks:
   lakehouse-net:
+    name: lakehouse-net
     driver: bridge
 
 volumes:
@@ -245,16 +246,17 @@ services:
       - "8080:8080"
     networks:
       - lakehouse-net
-    entrypoint: >
-      /bin/bash -c "
-      airflow db migrate &&
-      airflow users create \
-        --username $${AIRFLOW_ADMIN_USER} --password $${AIRFLOW_ADMIN_PASSWORD} \
-        --firstname $${AIRFLOW_ADMIN_FIRSTNAME} --lastname $${AIRFLOW_ADMIN_LASTNAME} \
-        --role Admin --email $${AIRFLOW_ADMIN_EMAIL} || true &&
-      airflow scheduler &
-      exec airflow webserver
-      "
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        airflow db migrate &&
+        (airflow users create \
+          --username "$${AIRFLOW_ADMIN_USER}" --password "$${AIRFLOW_ADMIN_PASSWORD}" \
+          --firstname "$${AIRFLOW_ADMIN_FIRSTNAME}" --lastname "$${AIRFLOW_ADMIN_LASTNAME}" \
+          --role Admin --email "$${AIRFLOW_ADMIN_EMAIL}" || true) &&
+        airflow scheduler &
+        exec airflow webserver
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
