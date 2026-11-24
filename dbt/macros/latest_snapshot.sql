@@ -12,34 +12,33 @@
 #}
 
 {% macro latest_snapshot(source_table, unique_key_cols, batch_id_col='batch_id') %}
-  WITH max_batch AS (
-    SELECT
-      {% if unique_key_cols is string %}
-        src.{{ unique_key_cols }},
-      {% else %}
-        {% for col in unique_key_cols %}
-          src.{{ col }},
-        {% endfor %}
-      {% endif %}
-      MAX(bs.batch_seq) AS max_batch_seq
-    FROM {{ source_table }} src
-    INNER JOIN {{ ref('batch_seq') }} bs
-      ON src.{{ batch_id_col }} = bs.batch_id
-    GROUP BY
-      {% if unique_key_cols is string %}
-        src.{{ unique_key_cols }}
-      {% else %}
-        {% for col in unique_key_cols %}
-          src.{{ col }}{% if not loop.last %}, {% endif %}
-        {% endfor %}
-      {% endif %}
-  )
   SELECT
     src.*
   FROM {{ source_table }} src
   INNER JOIN {{ ref('batch_seq') }} bs
     ON src.{{ batch_id_col }} = bs.batch_id
-  INNER JOIN max_batch mb
+  INNER JOIN (
+    SELECT
+      {% if unique_key_cols is string %}
+        src_inner.{{ unique_key_cols }},
+      {% else %}
+        {% for col in unique_key_cols %}
+          src_inner.{{ col }},
+        {% endfor %}
+      {% endif %}
+      MAX(bs_inner.batch_seq) AS max_batch_seq
+    FROM {{ source_table }} src_inner
+    INNER JOIN {{ ref('batch_seq') }} bs_inner
+      ON src_inner.{{ batch_id_col }} = bs_inner.batch_id
+    GROUP BY
+      {% if unique_key_cols is string %}
+        src_inner.{{ unique_key_cols }}
+      {% else %}
+        {% for col in unique_key_cols %}
+          src_inner.{{ col }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      {% endif %}
+  ) mb
     ON {% if unique_key_cols is string %}
          (src.{{ unique_key_cols }} = mb.{{ unique_key_cols }} OR (src.{{ unique_key_cols }} IS NULL AND mb.{{ unique_key_cols }} IS NULL))
        {% else %}
