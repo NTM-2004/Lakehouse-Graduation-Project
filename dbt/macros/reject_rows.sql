@@ -13,9 +13,9 @@
     CAST(NULL AS VARCHAR)
   {% else %}
     NULLIF(
-      TRIM(BOTH '; ' FROM (
+      TRIM(BOTH ';' FROM (
         {% for cond, reason in conditions_with_reasons %}
-          (CASE WHEN {{ cond }} THEN '{{ reason }}; ' ELSE '' END)
+          (CASE WHEN {{ cond }} THEN '{{ reason }};' ELSE '' END)
           {%- if not loop.last %} || {% endif %}
         {% endfor %}
       )),

@@ -8,7 +8,7 @@ lakehouse:
     dev:
       type: dremio
       software_host: "{{ env_var('DREMIO_HOST', 'localhost') }}"
-      port: "{{ env_var('DREMIO_FLIGHT_PORT', '32010') | int }}"
+      port: "{{ env_var('DREMIO_PORT', '9047') | int }}"
       user: "{{ env_var('DREMIO_ADMIN_USER', 'admin') }}"
       password: "{{ env_var('DREMIO_ADMIN_PASSWORD', 'admin12345') }}"
       use_ssl: false

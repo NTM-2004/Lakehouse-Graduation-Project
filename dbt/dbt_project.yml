@@ -31,6 +31,7 @@ vars:
 
   # Batch hiện tại (mặc định là batch cuối 2018-08 khi chạy tổng hợp)
   batch_id: '2018-08'
+  final_batch_id: '2018-08'
 
 # Khai báo cách vật hóa mặc định cho từng tầng dữ liệu
 models:

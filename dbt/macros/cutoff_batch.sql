@@ -13,18 +13,20 @@
 
 {# Kiểm tra batch cuối: trả về True/False trong Jinja hoặc biểu thức boolean trong SQL #}
 {% macro is_final_batch(batch_col=none) %}
+  {%- set final_batch = var("final_batch_id", "2018-08") -%}
   {%- if batch_col is none -%}
-    {{ return(var("batch_id", "2018-08") == '2018-08') }}
+    {{ return(var("batch_id", final_batch) == final_batch) }}
   {%- else -%}
-    ({{ batch_col }} = '2018-08')
+    ({{ batch_col }} = '{{ final_batch }}')
   {%- endif -%}
 {% endmacro %}
 
 {# Kiểm tra batch giữa: dùng cho kiểm thử mồ côi (chạy warn ở batch giữa, error ở batch cuối) #}
 {% macro is_middle_batch(batch_col=none) %}
+  {%- set final_batch = var("final_batch_id", "2018-08") -%}
   {%- if batch_col is none -%}
-    {{ return(var("batch_id", "2018-08") != '2018-08') }}
+    {{ return(var("batch_id", final_batch) != final_batch) }}
   {%- else -%}
-    ({{ batch_col }} != '2018-08')
+    ({{ batch_col }} != '{{ final_batch }}')
   {%- endif -%}
 {% endmacro %}

@@ -23,6 +23,7 @@ AN-13,C1,leads,Deal chốt trước ngày liên hệ đầu,1
 AN-14,orders_source_excluded,orders,Số đơn giao sau ngày chốt ở nguồn (đã để trống tại Silver),59
 AN-14,reviews_source_excluded,order_reviews,Số đánh giá trả lời sau ngày chốt ở nguồn (đã để trống tại Silver),666
 AN-14,silver_post_cutoff_expected,orders,Kỳ vọng mốc sau ngày chốt tại tầng Silver (phải bằng 0),0
+AN-14,reviews_silver_post_cutoff_expected,order_reviews,Kỳ vọng phản hồi sau ngày chốt tại tầng Silver (phải bằng 0),0
 AN-15,E1,clickstream_events,Phiên có sự kiện sau sự kiện mua,453
 AN-15,E2,clickstream_events,Sự kiện chung giây trong cùng phiên,6
 AN-16,shipped_overdue_undelivered,orders,Đơn shipped chưa có ngày giao khách quá hạn tại ngày chốt,1103

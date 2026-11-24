@@ -6,6 +6,9 @@
   - Tuyệt đối không sắp xếp theo chuỗi batch_id vì 'bulk_...' lớn hơn '2018-06'.
   - Không dùng SELECT * EXCLUDE vì Dremio không hỗ trợ cú pháp này; dùng INNER JOIN max_batch
     để trả về đúng và đủ các cột của bảng nguồn src.* mà không sinh thêm cột phụ.
+  - Xử lý NULL-safe trên unique key để không loại bỏ nhầm dòng có khóa NULL.
+  - LƯU Ý THỨ TỰ: Macro này LUÔN PHẢI ĐƯỢC GỌI SAU KHI ĐÃ TÁCH REJECT mức 1,
+    đảm bảo dòng lỗi mức 1 vào đúng bảng _rejects trước khi deduplicate.
 #}
 
 {% macro latest_snapshot(source_table, unique_key_cols, batch_id_col='batch_id') %}
@@ -38,10 +41,10 @@
     ON src.{{ batch_id_col }} = bs.batch_id
   INNER JOIN max_batch mb
     ON {% if unique_key_cols is string %}
-         src.{{ unique_key_cols }} = mb.{{ unique_key_cols }}
+         (src.{{ unique_key_cols }} = mb.{{ unique_key_cols }} OR (src.{{ unique_key_cols }} IS NULL AND mb.{{ unique_key_cols }} IS NULL))
        {% else %}
          {% for col in unique_key_cols %}
-           src.{{ col }} = mb.{{ col }}{% if not loop.last %} AND {% endif %}
+           (src.{{ col }} = mb.{{ col }} OR (src.{{ col }} IS NULL AND mb.{{ col }} IS NULL)){% if not loop.last %} AND {% endif %}
          {% endfor %}
        {% endif %}
     AND bs.batch_seq = mb.max_batch_seq
