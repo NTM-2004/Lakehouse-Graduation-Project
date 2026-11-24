@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: leads
+    description: >
+      Bảng Silver Marketing Funnel đã duỗi phẳng từ bronze.marketing_leads (B-318).
+      Grain: 1 dòng = 1 lead (mql_id), giữ bản chụp batch_seq lớn nhất.
+    columns:
+      - name: mql_id
+        description: "Khóa chính của lead."
+        tests:
+          - unique:
+              severity: error
+          - not_null:
+              severity: error
+
+      - name: first_contact_date
+        description: "Ngày liên hệ đầu tiên của lead."
+        tests:
+          - not_null:
+              severity: error
+
+      - name: landing_page_id
+        description: "Mã landing page (giữ cột, không dùng cho KPI)."
+        tests:
+          - not_null:
+              severity: error
+
+      - name: origin
+        description: "Nguồn lead (chữ thường; thiếu -> 'unknown')."
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values:
+                - organic_search
+                - paid_search
+                - social
+                - unknown
+                - direct_traffic
+                - email
+                - referral
+                - other
+                - display
+                - other_publicities
+              severity: error
+
+      - name: has_deal
+        description: "true khi lead đã chốt deal (nhóm deal ở Bronze khác NULL)."
+        tests:
+          - not_null:
+              severity: error
+
+      - name: seller_id
+        description: "Khóa mềm sang silver.sellers (~47,98% khớp); duy nhất khi khác NULL."
+        tests:
+          - unique:
+              config:
+                where: "seller_id IS NOT NULL"
+                severity: warn
+          - relationships:
+              to: ref('sellers')
+              field: seller_id
+              config:
+                where: "seller_id IS NOT NULL"
+                severity: warn
+
+      - name: source_file
+        description: "Tệp nguồn của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              severity: error
+
+      - name: batch_id
+        description: "Batch của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              severity: error
+
+  - name: leads_rejects
+    description: >
+      Bảng reject mức 1 của silver.leads (B-318): lưu các dòng is_parsed = true
+      nhưng thiếu/hỏng mql_id, first_contact_date hoặc landing_page_id.
+    columns:
+      - name: reject_reason
+        tests:
+          - not_null:
+              severity: error

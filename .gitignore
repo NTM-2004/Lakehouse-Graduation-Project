@@ -38,3 +38,5 @@ hive_lib/*
 !hive_lib/.gitkeep
 
 SETUP.md
+JSON_CHECKLIST.md
+
