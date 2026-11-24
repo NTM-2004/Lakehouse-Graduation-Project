@@ -19,4 +19,13 @@ mc mb -p local/lakehouse/bronze
 mc mb -p local/lakehouse/silver
 mc mb -p local/lakehouse/gold
 
+# Đồng bộ dữ liệu Raw cục bộ (nếu đã chuẩn bị sẵn ở ../raw) lên MinIO (F03, F16)
+# Chỉ đồng bộ 3 nguồn theo thiết kế chính thức; không dùng --remove để giữ tính bất biến của Raw
+for src in csv marketing_funnel clickstream; do
+  if [ -d "/raw_data/${src}" ] && [ -n "$(ls -A "/raw_data/${src}" 2>/dev/null)" ]; then
+    echo "Syncing raw/${src} to local/lakehouse/raw/${src}..."
+    mc mirror --overwrite --exclude "*.gitkeep" "/raw_data/${src}" "local/lakehouse/raw/${src}"
+  fi
+done
+
 echo "MinIO buckets and paths ready!"

@@ -78,8 +78,9 @@ def write_bronze_iceberg(
     full_table_name = f"{catalog}.{db_name}.{table_name}"
     spark = df.sparkSession
 
-    # Đảm bảo schema bronze đã tồn tại trong catalog
-    spark.sql(f"CREATE DATABASE IF NOT EXISTS {catalog}.{db_name}")
+    # Đảm bảo schema bronze đã tồn tại trong catalog và trỏ thẳng vào s3a://lakehouse/<db_name>
+    warehouse_base = os.getenv("WAREHOUSE_PATH", "s3a://lakehouse/").rstrip("/")
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS {catalog}.{db_name} LOCATION '{warehouse_base}/{db_name}'")
 
     # Ghi đè đúng partition
     (

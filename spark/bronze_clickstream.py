@@ -111,8 +111,9 @@ def load_bronze_clickstream(
     # Thêm 3 cột truy vết bắt buộc theo F03
     bronze_df = add_audit_columns(clean_df, batch_id=batch_id, source_file=source_file_name)
 
-    # Đảm bảo schema bronze đã tồn tại trong catalog
-    spark.sql("CREATE DATABASE IF NOT EXISTS hive.bronze")
+    # Đảm bảo schema bronze đã tồn tại trong catalog và trỏ thẳng vào s3a://lakehouse/bronze
+    warehouse_base = os.getenv("WAREHOUSE_PATH", "s3a://lakehouse/").rstrip("/")
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS hive.bronze LOCATION '{warehouse_base}/bronze'")
 
     # Đảm bảo bảng Iceberg được tạo với partition batch_id nếu chưa có
     spark.sql("""

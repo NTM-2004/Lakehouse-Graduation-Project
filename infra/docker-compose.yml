@@ -52,6 +52,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - ./minio_init.sh:/minio_init.sh:ro
+      - ../raw:/raw_data:ro
     networks:
       - lakehouse-net
     entrypoint: ["/bin/sh", "/minio_init.sh"]
@@ -92,6 +93,12 @@ services:
       DB_DRIVER: "postgres"
       SERVICE_OPTS: "-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/${HMS_DB_NAME:-metastore} -Djavax.jdo.option.ConnectionUserName=${HMS_DB_USER:-hive} -Djavax.jdo.option.ConnectionPassword=${HMS_DB_PASSWORD:-hive}"
       IS_RESUME: "true"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        /opt/hive/bin/schematool -dbType postgres -info >/dev/null 2>&1 || /opt/hive/bin/schematool -dbType postgres -initSchema
+        exec /entrypoint.sh
     volumes:
       - ./jars/hadoop-aws-3.2.0.jar:/opt/hive/lib/hadoop-aws-3.2.0.jar:ro
       - ./jars/aws-java-sdk-bundle-1.11.563.jar:/opt/hive/lib/aws-java-sdk-bundle-1.11.563.jar:ro
