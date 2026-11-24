@@ -1,0 +1,130 @@
+version: 2
+
+sources:
+  - name: bronze_clickstream
+    description: "Nguồn tầng Bronze của Clickstream (hive.bronze.clickstream_events)"
+    database: hive
+    schema: bronze
+    tables:
+      - name: clickstream_events
+        description: "Bảng Iceberg Bronze nạp từ raw/clickstream/<batch_id>/access_log.txt (B-204)"
+
+models:
+  - name: clickstream_events
+    description: >
+      Bảng sự kiện Clickstream tầng Silver (B-320).
+      Mỗi dòng một sự kiện đã gộp trùng nguyên văn (F09), bỏ raw_line,
+      gắn cờ chất lượng E1, E2, T1 và lưu truy vết source_file, batch_id (F17).
+    tests:
+      - clickstream_order_orphans_exceed_expected:
+          config:
+            severity: error
+      - clickstream_order_orphans_middle_warn:
+          config:
+            severity: warn
+      - clickstream_purchase_amount_matches_order:
+          config:
+            severity: warn
+      - clickstream_an15_expected_counts:
+          config:
+            severity: warn
+    columns:
+      - name: event_id
+        description: "Khóa chính thay thế: session_id|event_ts(YYYY-MM-DD HH:MM:SS)|event_type|product_id (hoặc 'none')"
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+      - name: session_id
+        description: "Mã phiên duyệt web"
+        tests:
+          - not_null:
+              config:
+                severity: error
+      - name: user_id
+        description: "Mã người dùng (tương ứng customer_id của Olist)"
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('customers')
+                field: customer_id
+              config:
+                severity: error
+      - name: event_ts
+        description: "Thời điểm xảy ra sự kiện (không vượt quá ngày chốt cutoff_timestamp)"
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - timestamp_not_after_cutoff:
+              config:
+                severity: error
+      - name: event_date
+        description: "Ngày xảy ra sự kiện, suy ra từ event_ts"
+        tests:
+          - not_null:
+              config:
+                severity: error
+      - name: event_type
+        description: "Loại sự kiện phễu duyệt web"
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: ['home', 'product_view', 'add_to_cart', 'purchase']
+              config:
+                severity: error
+      - name: product_id
+        description: "Mã sản phẩm (NULL khi event_type là home)"
+        tests:
+          - relationships:
+              arguments:
+                to: ref('products')
+                field: product_id
+              config:
+                where: "product_id IS NOT NULL"
+                severity: error
+      - name: order_id
+        description: "Mã đơn hàng (chỉ có ở sự kiện purchase; kiểm thử mồ côi ngoại lệ ở cấp model)"
+      - name: amount
+        description: "Giá trị giao dịch DECIMAL(10,2) của sự kiện purchase"
+      - name: outcome
+        description: "Kết quả sự kiện purchase"
+      - name: dq_flag
+        description: "Cờ chất lượng dữ liệu (E1, E2, T1:amount); NULL là sạch"
+      - name: source_file
+        description: "Tên tệp log nguồn (F17)"
+        tests:
+          - not_null:
+              config:
+                severity: error
+      - name: batch_id
+        description: "Tên batch nạp của dòng được giữ (F17)"
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: clickstream_rejects
+    description: >
+      Bảng bản ghi lỗi mức 1 của Clickstream (B-320, ngoại lệ đặt tên: silver.clickstream_rejects).
+      Giữ nguyên các cột Bronze và thêm reject_reason. Kiểm thử số dòng reject = 0 ở mức error.
+    tests:
+      - reject_count_zero:
+          config:
+            severity: error
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1"
+        tests:
+          - not_null:
+              config:
+                severity: error
