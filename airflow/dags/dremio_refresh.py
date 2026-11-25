@@ -45,10 +45,12 @@ def _dremio_base_url() -> str:
 
 
 def _login_dremio() -> requests.Session:
-    """Đăng nhập Dremio REST API bằng tài khoản quản trị từ biến môi trường."""
+    """Đăng nhập Dremio REST API bằng tài khoản quản trị từ biến môi trường (không viết cứng mật khẩu)."""
     base_url = _dremio_base_url()
-    user = os.getenv("DREMIO_ADMIN_USER", "admin")
-    password = os.getenv("DREMIO_ADMIN_PASSWORD", "admin12345")
+    user = os.getenv("DREMIO_ADMIN_USER", "").strip()
+    password = os.getenv("DREMIO_ADMIN_PASSWORD", "").strip()
+    if not user or not password:
+        raise RuntimeError("Thiếu biến môi trường DREMIO_ADMIN_USER hoặc DREMIO_ADMIN_PASSWORD.")
 
     session = requests.Session()
     resp = session.post(

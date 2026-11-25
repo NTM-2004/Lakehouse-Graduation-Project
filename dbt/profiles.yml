@@ -9,8 +9,8 @@ lakehouse:
       type: dremio
       software_host: "{{ env_var('DREMIO_HOST', 'localhost') }}"
       port: "{{ env_var('DREMIO_PORT', '9047') | int }}"
-      user: "{{ env_var('DREMIO_ADMIN_USER', 'admin') }}"
-      password: "{{ env_var('DREMIO_ADMIN_PASSWORD', 'admin12345') }}"
+      user: "{{ env_var('DREMIO_ADMIN_USER') }}"
+      password: "{{ env_var('DREMIO_ADMIN_PASSWORD') }}"
       use_ssl: false
       datalake: hive             # Tên nguồn Hive Metastore đăng ký trên Dremio
       database: hive

@@ -25,8 +25,6 @@ from pyspark.sql.functions import (
     regexp_extract,
     when,
     to_timestamp,
-    lit,
-    current_timestamp
 )
 
 # Thêm thư mục gốc vào sys.path để import bronze_common
@@ -40,7 +38,6 @@ from spark.bronze_common import (
     add_audit_columns,
     write_bronze_iceberg,
     VALID_BATCHES,
-    BATCH_BULK
 )
 
 # Regex chuẩn bóc tách 9 trường từ log Clickstream

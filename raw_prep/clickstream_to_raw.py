@@ -31,9 +31,6 @@ if PROJECT_ROOT not in sys.path:
 
 from raw_prep.raw_common import (
     BATCH_BULK,
-    BATCH_2018_06,
-    BATCH_2018_07,
-    BATCH_2018_08,
     BATCH_NAMES,
     get_batch_id_by_event_timestamp,
     calculate_sha256,

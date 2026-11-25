@@ -62,23 +62,29 @@ ON CONFLICT (run_id) DO UPDATE SET
 
 
 def _get_db_connection_params() -> Dict[str, Any]:
-    """Đọc cấu hình kết nối Airflow Metadata DB từ biến môi trường."""
+    """Đọc cấu hình kết nối Airflow Metadata DB từ biến môi trường (không viết cứng mật khẩu)."""
     conn_uri = os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN")
     if conn_uri:
         normalized = conn_uri.replace("postgresql+psycopg2://", "postgresql://")
         parsed = urlparse(normalized)
+        password = parsed.password or os.getenv("AIRFLOW_DB_PASSWORD", "").strip()
+        if not password:
+            raise RuntimeError("Thiếu mật khẩu Airflow Metadata DB (AIRFLOW_DB_PASSWORD).")
         return {
             "host": parsed.hostname or "airflow-postgres",
             "port": parsed.port or 5432,
             "user": parsed.username or os.getenv("AIRFLOW_DB_USER", "airflow"),
-            "password": parsed.password or os.getenv("AIRFLOW_DB_PASSWORD", "airflow"),
+            "password": password,
             "dbname": (parsed.path or "/airflow").lstrip("/") or "airflow",
         }
+    password = os.getenv("AIRFLOW_DB_PASSWORD", "").strip()
+    if not password:
+        raise RuntimeError("Thiếu biến môi trường AIRFLOW_DB_PASSWORD.")
     return {
         "host": os.getenv("AIRFLOW_DB_HOST", "airflow-postgres"),
         "port": int(os.getenv("AIRFLOW_DB_PORT", "5432")),
         "user": os.getenv("AIRFLOW_DB_USER", "airflow"),
-        "password": os.getenv("AIRFLOW_DB_PASSWORD", "airflow"),
+        "password": password,
         "dbname": os.getenv("AIRFLOW_DB_NAME", "airflow"),
     }
 

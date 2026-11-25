@@ -9,8 +9,6 @@ Mục đích:
 """
 
 import os
-import sys
-from typing import Optional
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import lit, current_timestamp
 
@@ -40,8 +38,7 @@ def get_spark_session(app_name: str = "BronzeIngestion") -> SparkSession:
         .config("spark.sql.catalog.hive.s3.endpoint", os.getenv("MINIO_ENDPOINT", "http://minio:9000"))
         .config("spark.sql.catalog.hive.s3.path-style-access", "true")
         .config("spark.hadoop.fs.s3a.endpoint", os.getenv("MINIO_ENDPOINT", "http://minio:9000"))
-        .config("spark.hadoop.fs.s3a.access.key", os.getenv("S3_ACCESS_KEY", "minioadmin"))
-        .config("spark.hadoop.fs.s3a.secret.key", os.getenv("S3_SECRET_KEY", "minioadmin"))
+        .config("spark.hadoop.fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EnvironmentVariableCredentialsProvider")
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")

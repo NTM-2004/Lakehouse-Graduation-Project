@@ -200,8 +200,10 @@ def compute_rows_out() -> int:
     """
     host = os.getenv("DREMIO_HOST", "dremio")
     port = os.getenv("DREMIO_PORT", "9047")
-    user = os.getenv("DREMIO_ADMIN_USER", "admin")
-    password = os.getenv("DREMIO_ADMIN_PASSWORD", "admin12345")
+    user = os.getenv("DREMIO_ADMIN_USER", "").strip()
+    password = os.getenv("DREMIO_ADMIN_PASSWORD", "").strip()
+    if not user or not password:
+        raise RuntimeError("Thiếu biến môi trường DREMIO_ADMIN_USER hoặc DREMIO_ADMIN_PASSWORD.")
     base_url = f"http://{host}:{port}"
 
     session = requests.Session()
@@ -265,7 +267,7 @@ def run_dbt_gold(
         profiles_dir=profiles_dir,
     )
     _run_dbt_cli(
-        ["test", "--select", "path:tests/gold_gt*", "--fail-fast"],
+        ["test", "--select", "gold_gt*", "--fail-fast"],
         batch_id=batch_id,
         project_dir=project_dir,
         profiles_dir=profiles_dir,

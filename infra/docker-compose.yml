@@ -18,15 +18,15 @@ services:
 
   # ---------------- 1. Object Storage: MinIO ----------------
   minio:
-    image: quay.io/minio/minio:latest
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: minio
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Thiếu MINIO_ROOT_USER trong .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Thiếu MINIO_ROOT_PASSWORD trong .env}
     volumes:
       - minio-data:/data
     networks:
@@ -43,14 +43,14 @@ services:
 
   # ---------------- 2. MinIO Init: Tạo bucket & thư mục 4 tầng ----------------
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: quay.io/minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     container_name: minio-init
     depends_on:
       minio:
         condition: service_healthy
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Thiếu MINIO_ROOT_USER trong .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Thiếu MINIO_ROOT_PASSWORD trong .env}
     volumes:
       - ./minio_init.sh:/minio_init.sh:ro
       - ../raw:/raw_data:ro
@@ -64,7 +64,7 @@ services:
     container_name: hive-metastore-db
     environment:
       POSTGRES_USER: ${HMS_DB_USER:-hive}
-      POSTGRES_PASSWORD: ${HMS_DB_PASSWORD:-hive}
+      POSTGRES_PASSWORD: ${HMS_DB_PASSWORD:?Thiếu HMS_DB_PASSWORD trong .env}
       POSTGRES_DB: ${HMS_DB_NAME:-metastore}
     volumes:
       - hive-metastore-db-data:/var/lib/postgresql/data
@@ -92,7 +92,11 @@ services:
     environment:
       SERVICE_NAME: "metastore"
       DB_DRIVER: "postgres"
-      SERVICE_OPTS: "-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/${HMS_DB_NAME:-metastore} -Djavax.jdo.option.ConnectionUserName=${HMS_DB_USER:-hive} -Djavax.jdo.option.ConnectionPassword=${HMS_DB_PASSWORD:-hive}"
+      HMS_DB_USER: ${HMS_DB_USER:-hive}
+      HMS_DB_PASSWORD: ${HMS_DB_PASSWORD:?Thiếu HMS_DB_PASSWORD trong .env}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?Thiếu S3_ACCESS_KEY trong .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?Thiếu S3_SECRET_KEY trong .env}
+      SERVICE_OPTS: "-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/${HMS_DB_NAME:-metastore} -Djavax.jdo.option.ConnectionUserName=${HMS_DB_USER:-hive} -Djavax.jdo.option.ConnectionPassword=${HMS_DB_PASSWORD:?Thiếu HMS_DB_PASSWORD trong .env}"
       IS_RESUME: "true"
     entrypoint:
       - /bin/bash
@@ -130,8 +134,8 @@ services:
       minio:
         condition: service_healthy
     environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-minioadmin}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-minioadmin}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?Thiếu S3_ACCESS_KEY trong .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?Thiếu S3_SECRET_KEY trong .env}
       AWS_REGION: us-east-1
       SPARK_HOME: /opt/spark
     volumes:
@@ -148,7 +152,7 @@ services:
       - lakehouse-net
     tty: true
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888 || exit 0"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8888 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -166,6 +170,9 @@ services:
         condition: service_healthy
       hive-metastore:
         condition: service_healthy
+    environment:
+      DREMIO_MAX_HEAP_MEMORY_SIZE_MB: "1536"
+      DREMIO_MAX_DIRECT_MEMORY_SIZE_MB: "2048"
     ports:
       - "9047:9047"
       - "31010:31010"
@@ -191,7 +198,7 @@ services:
     container_name: airflow-postgres
     environment:
       POSTGRES_USER: ${AIRFLOW_DB_USER:-airflow}
-      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:?Thiếu AIRFLOW_DB_PASSWORD trong .env}
       POSTGRES_DB: ${AIRFLOW_DB_NAME:-airflow}
     volumes:
       - airflow-postgres-data:/var/lib/postgresql/data
@@ -218,22 +225,20 @@ services:
         condition: service_healthy
       spark:
         condition: service_healthy
-      dremio:
-        condition: service_healthy
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER:-airflow}:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_DB_NAME:-airflow}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER:-airflow}:${AIRFLOW_DB_PASSWORD:?Thiếu AIRFLOW_DB_PASSWORD trong .env}@airflow-postgres:5432/${AIRFLOW_DB_NAME:-airflow}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
-      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqnzq8=}
-      AIRFLOW__CORE__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-lakehouse_secret_key_airflow_2026}
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?Thiếu AIRFLOW_FERNET_KEY trong .env}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:?Thiếu AIRFLOW_SECRET_KEY trong .env}
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER:-admin}
-      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Thiếu AIRFLOW_ADMIN_PASSWORD trong .env}
       AIRFLOW_ADMIN_FIRSTNAME: ${AIRFLOW_ADMIN_FIRSTNAME:-Minh}
       AIRFLOW_ADMIN_LASTNAME: ${AIRFLOW_ADMIN_LASTNAME:-Admin}
       AIRFLOW_ADMIN_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-minh.lead@lakehouse.local}
-      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:-admin}
-      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:-admin12345}
+      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:?Thiếu DREMIO_ADMIN_USER trong .env}
+      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:?Thiếu DREMIO_ADMIN_PASSWORD trong .env}
       DREMIO_HOST: ${DREMIO_HOST:-dremio}
       DREMIO_FLIGHT_PORT: ${DREMIO_FLIGHT_PORT:-32010}
     volumes:
@@ -250,19 +255,20 @@ services:
       - /bin/bash
       - -c
       - |
-        airflow db migrate &&
-        (airflow users create \
+        set -e
+        airflow db migrate
+        airflow users create \
           --username "$${AIRFLOW_ADMIN_USER}" --password "$${AIRFLOW_ADMIN_PASSWORD}" \
           --firstname "$${AIRFLOW_ADMIN_FIRSTNAME}" --lastname "$${AIRFLOW_ADMIN_LASTNAME}" \
-          --role Admin --email "$${AIRFLOW_ADMIN_EMAIL}" || true) &&
+          --role Admin --email "$${AIRFLOW_ADMIN_EMAIL}" || true
         airflow scheduler &
         exec airflow webserver
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health | python3 -c \"import sys, json; d = json.load(sys.stdin); sys.exit(0 if d.get('metadatabase', {}).get('status') == 'healthy' and d.get('scheduler', {}).get('status') == 'healthy' else 1)\""]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 40s
+      retries: 6
+      start_period: 45s
     deploy:
       resources:
         limits:
@@ -280,10 +286,12 @@ services:
     environment:
       DREMIO_HOST: ${DREMIO_HOST:-dremio}
       DREMIO_FLIGHT_PORT: ${DREMIO_FLIGHT_PORT:-32010}
-      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:-admin}
-      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:-admin12345}
+      DREMIO_CATALOG: ${DREMIO_CATALOG:-hive}
+      DREMIO_GOLD_SCHEMA: ${DREMIO_GOLD_SCHEMA:-gold}
+      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:?Thiếu DREMIO_ADMIN_USER trong .env}
+      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:?Thiếu DREMIO_ADMIN_PASSWORD trong .env}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
     volumes:
       - ../streamlit:/app
     ports:
