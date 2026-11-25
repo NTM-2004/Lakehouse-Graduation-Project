@@ -51,9 +51,8 @@ models:
               config:
                 severity: error
           - relationships:
-              arguments:
-                to: ref('customers')
-                field: customer_id
+              to: ref('customers')
+              field: customer_id
               config:
                 severity: error
       - name: event_ts
@@ -78,17 +77,15 @@ models:
               config:
                 severity: error
           - accepted_values:
-              arguments:
-                values: ['home', 'product_view', 'add_to_cart', 'purchase']
+              values: ['home', 'product_view', 'add_to_cart', 'purchase']
               config:
                 severity: error
       - name: product_id
         description: "Mã sản phẩm (NULL khi event_type là home)"
         tests:
           - relationships:
-              arguments:
-                to: ref('products')
-                field: product_id
+              to: ref('products')
+              field: product_id
               config:
                 where: "product_id IS NOT NULL"
                 severity: error
