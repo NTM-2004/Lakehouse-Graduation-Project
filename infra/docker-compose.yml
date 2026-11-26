@@ -138,6 +138,9 @@ services:
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?Thiếu S3_SECRET_KEY trong .env}
       AWS_REGION: us-east-1
       SPARK_HOME: /opt/spark
+      DREMIO_HOST: ${DREMIO_HOST:-dremio}
+      DREMIO_ADMIN_USER: ${DREMIO_ADMIN_USER:?Thiếu DREMIO_ADMIN_USER trong .env}
+      DREMIO_ADMIN_PASSWORD: ${DREMIO_ADMIN_PASSWORD:?Thiếu DREMIO_ADMIN_PASSWORD trong .env}
     volumes:
       - ../spark:/home/spark
       - ../raw_prep:/home/raw_prep
