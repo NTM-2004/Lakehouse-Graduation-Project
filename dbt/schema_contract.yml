@@ -1,0 +1,325 @@
+version: 2
+description: Hợp đồng schema (B-026) cho toàn bộ các bảng tầng Silver và Gold theo
+  Design Bronze, Silver v2 và Design Gold v2
+silver_tables:
+  orders:
+  - order_id
+  - customer_id
+  - order_status
+  - order_purchase_timestamp
+  - order_approved_at
+  - order_delivered_carrier_date
+  - order_delivered_customer_date
+  - order_estimated_delivery_date
+  - dq_flag
+  - source_file
+  - batch_id
+  order_items:
+  - order_id
+  - order_item_id
+  - product_id
+  - seller_id
+  - shipping_limit_date
+  - price
+  - freight_value
+  - dq_flag
+  - source_file
+  - batch_id
+  order_payments:
+  - order_id
+  - payment_sequential
+  - payment_type
+  - payment_installments
+  - payment_value
+  - dq_flag
+  - source_file
+  - batch_id
+  order_reviews:
+  - review_id
+  - order_id
+  - review_score
+  - review_comment_title
+  - review_comment_message
+  - review_creation_date
+  - review_answer_timestamp
+  - dq_flag
+  - source_file
+  - batch_id
+  customers:
+  - customer_id
+  - customer_unique_id
+  - customer_zip_code_prefix
+  - customer_city
+  - customer_state
+  - source_file
+  - batch_id
+  products:
+  - product_id
+  - product_category_name
+  - product_category_en
+  - product_name_length
+  - product_description_length
+  - product_photos_qty
+  - product_weight_g
+  - product_length_cm
+  - product_height_cm
+  - product_width_cm
+  - dq_flag
+  - source_file
+  - batch_id
+  sellers:
+  - seller_id
+  - seller_zip_code_prefix
+  - seller_city
+  - seller_state
+  - source_file
+  - batch_id
+  product_category_translation:
+  - product_category_name
+  - product_category_name_english
+  - source_file
+  - batch_id
+  geolocation:
+  - geolocation_zip_code_prefix
+  - geolocation_lat
+  - geolocation_lng
+  - geolocation_city
+  - geolocation_state
+  - n_points
+  - batch_id
+  leads:
+  - mql_id
+  - first_contact_date
+  - landing_page_id
+  - origin
+  - has_deal
+  - seller_id
+  - sdr_id
+  - sr_id
+  - won_date
+  - business_segment
+  - lead_type
+  - lead_behaviour_profile
+  - average_stock
+  - business_type
+  - has_company
+  - has_gtin
+  - declared_product_catalog_size
+  - declared_monthly_revenue
+  - dq_flag
+  - source_file
+  - batch_id
+  clickstream_events:
+  - event_id
+  - session_id
+  - user_id
+  - event_ts
+  - event_date
+  - event_type
+  - product_id
+  - order_id
+  - amount
+  - outcome
+  - dq_flag
+  - source_file
+  - batch_id
+gold_tables:
+  dim_date:
+  - date
+  - year
+  - month
+  - year_month
+  dim_customer:
+  - customer_id
+  - customer_unique_id
+  - customer_city
+  - customer_state
+  dim_product:
+  - product_id
+  - product_category_name
+  - product_category_en
+  dim_seller:
+  - seller_id
+  - seller_city
+  - seller_state
+  fact_order:
+  - order_id
+  - customer_id
+  - order_status
+  - purchase_date
+  - n_items
+  - order_revenue
+  - is_valid_order
+  - is_canceled
+  - is_delivered_order
+  - delivery_days
+  - shipping_days
+  - is_late
+  - is_overdue_undelivered
+  - review_score
+  - batch_id
+  fact_order_item:
+  - order_id
+  - order_item_id
+  - product_id
+  - seller_id
+  - price
+  - purchase_date
+  - batch_id
+  fact_lead:
+  - mql_id
+  - first_contact_date
+  - origin
+  - has_deal
+  - won_date
+  - days_to_close
+  - is_close_time_excluded
+  - batch_id
+  fact_session:
+  - session_id
+  - session_date
+  - first_event_ts
+  - duration_seconds
+  - n_events
+  - has_home
+  - has_product_view
+  - has_add_to_cart
+  - has_purchase
+  - order_id
+  - purchase_amount
+  kpi_sales_month:
+  - year_month
+  - n_orders_total
+  - n_canceled_orders
+  - n_valid_orders
+  - sum_revenue
+  - avg_order_value
+  - cancel_rate
+  - order_growth
+  - n_obs
+  - is_small_sample
+  kpi_sales_state_month:
+  - customer_state
+  - year_month
+  - n_orders_total
+  - n_canceled_orders
+  - n_valid_orders
+  - sum_revenue
+  - avg_order_value
+  - cancel_rate
+  - n_obs
+  - is_small_sample
+  kpi_delivery_month:
+  - year_month
+  - n_valid_orders
+  - n_delivered
+  - sum_delivery_days
+  - n_late
+  - n_on_time
+  - n_shipping_measured
+  - sum_shipping_days
+  - n_scored
+  - sum_score
+  - n_scored_on_time
+  - sum_score_on_time
+  - n_scored_late
+  - sum_score_late
+  - n_overdue_undelivered
+  - avg_delivery_days
+  - late_rate
+  - avg_score
+  - avg_shipping_days
+  - score_gap
+  - n_obs
+  - is_small_sample
+  - is_small_gap_group
+  kpi_delivery_state_month:
+  - customer_state
+  - year_month
+  - n_delivered
+  - sum_delivery_days
+  - n_late
+  - n_on_time
+  - n_shipping_measured
+  - sum_shipping_days
+  - n_scored
+  - sum_score
+  - n_scored_on_time
+  - sum_score_on_time
+  - n_scored_late
+  - sum_score_late
+  - n_overdue_undelivered
+  - avg_delivery_days
+  - late_rate
+  - avg_score
+  - avg_shipping_days
+  - score_gap
+  - n_obs
+  - is_small_sample
+  - is_small_gap_group
+  kpi_lead_month:
+  - year_month
+  - n_leads
+  - n_leads_with_deal
+  - n_close_time_valid_deals
+  - sum_days_to_close
+  - n_leads_not_excluded
+  - n_won_30d
+  - lead_to_deal_rate
+  - avg_days_to_close
+  - won_30d_rate
+  - n_obs
+  - is_small_sample
+  kpi_lead_origin:
+  - origin
+  - n_leads
+  - n_leads_with_deal
+  - n_close_time_valid_deals
+  - sum_days_to_close
+  - n_leads_not_excluded
+  - n_won_30d
+  - lead_to_deal_rate
+  - avg_days_to_close
+  - won_30d_rate
+  - n_obs
+  - is_small_sample
+  kpi_funnel_day:
+  - session_date
+  - n_sessions
+  - n_reach_home
+  - n_reach_view
+  - n_reach_cart
+  - n_reach_purchase
+  - n_purchase_sessions
+  - n_cart_sessions
+  - n_cart_abandoned_sessions
+  - n_sessions_ge2
+  - sum_duration_seconds
+  - conversion_rate
+  - abandon_rate
+  - avg_duration_seconds
+  - step_rate_home_view
+  - step_rate_view_cart
+  - step_rate_cart_purchase
+  - n_obs
+  - is_small_sample
+  kpi_funnel_month:
+  - year_month
+  - n_sessions
+  - n_reach_home
+  - n_reach_view
+  - n_reach_cart
+  - n_reach_purchase
+  - n_purchase_sessions
+  - n_cart_sessions
+  - n_cart_abandoned_sessions
+  - n_sessions_ge2
+  - sum_duration_seconds
+  - conversion_rate
+  - abandon_rate
+  - avg_duration_seconds
+  - step_rate_home_view
+  - step_rate_view_cart
+  - step_rate_cart_purchase
+  - n_obs
+  - is_small_sample

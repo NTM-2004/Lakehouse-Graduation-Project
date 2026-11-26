@@ -1,4 +1,7 @@
+# Environment variables (Secrets)
 .env
+
+# Python
 __pycache__/
 *.pyc
 .venv/
@@ -6,39 +9,29 @@ venv/
 .DS_Store
 *.log
 
-# Raw data files are large and shouldn't live in git — they go to MinIO instead.
-# Keep the folder structure (via .gitkeep) but not the actual data.
+# Infra Jars (downloaded by infra/fetch_jars.sh)
+infra/jars/
+*.jar
+
+# Raw data generated / input
 raw/csv/*
 !raw/csv/.gitkeep
-raw/json/*
-!raw/json/.gitkeep
-raw/clickstream/*
-!raw/clickstream/.gitkeep
 raw/marketing_funnel/*
 !raw/marketing_funnel/.gitkeep
-text/*
-# dbt
+raw/clickstream/*
+!raw/clickstream/.gitkeep
+# Archives & zips
+*.zip
+
+# dbt artifacts
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/
+dbt/.user.yml
 
-# Airflow
+# Airflow logs & state
 airflow/logs/
 
-# Image
-minio-images.tar
-
-# Override
-docker-compose.override.yml
-
-# Lib file
-spark_lib/*
-!spark_lib/.gitkeep
-hive_lib/*
-!hive_lib/.gitkeep
-
-SETUP.md
-JSON_CHECKLIST.md
+# Temporary & scratches
+scratch/
 temp/
-
-

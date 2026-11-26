@@ -1,0 +1,50 @@
+{#
+  latest_snapshot.sql - Macro chọn bản chụp có batch_seq lớn nhất cho mỗi khóa (B-018)
+  Áp dụng cho orders, order_reviews, leads khi có nhiều bản chụp qua các batch.
+  Quy tắc (Design Bronze, Silver v2):
+  - Bảng Bronze chỉ có batch_id, cần JOIN ref('batch_seq') để lấy batch_seq số nguyên (0 đến 3).
+  - Tuyệt đối không sắp xếp theo chuỗi batch_id vì 'bulk_...' lớn hơn '2018-06'.
+  - Không dùng SELECT * EXCLUDE vì Dremio không hỗ trợ cú pháp này; dùng INNER JOIN max_batch
+    để trả về đúng và đủ các cột của bảng nguồn src.* mà không sinh thêm cột phụ.
+  - Xử lý NULL-safe trên unique key để không loại bỏ nhầm dòng có khóa NULL.
+  - LƯU Ý THỨ TỰ: Macro này LUÔN PHẢI ĐƯỢC GỌI SAU KHI ĐÃ TÁCH REJECT mức 1,
+    đảm bảo dòng lỗi mức 1 vào đúng bảng _rejects trước khi deduplicate.
+#}
+
+{% macro latest_snapshot(source_table, unique_key_cols, batch_id_col='batch_id') %}
+  SELECT
+    src.*
+  FROM {{ source_table }} src
+  INNER JOIN {{ ref('batch_seq') }} bs
+    ON src.{{ batch_id_col }} = bs.batch_id
+  INNER JOIN (
+    SELECT
+      {% if unique_key_cols is string %}
+        src_inner.{{ unique_key_cols }},
+      {% else %}
+        {% for col in unique_key_cols %}
+          src_inner.{{ col }},
+        {% endfor %}
+      {% endif %}
+      MAX(bs_inner.batch_seq) AS max_batch_seq
+    FROM {{ source_table }} src_inner
+    INNER JOIN {{ ref('batch_seq') }} bs_inner
+      ON src_inner.{{ batch_id_col }} = bs_inner.batch_id
+    GROUP BY
+      {% if unique_key_cols is string %}
+        src_inner.{{ unique_key_cols }}
+      {% else %}
+        {% for col in unique_key_cols %}
+          src_inner.{{ col }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      {% endif %}
+  ) mb
+    ON {% if unique_key_cols is string %}
+         (src.{{ unique_key_cols }} = mb.{{ unique_key_cols }} OR (src.{{ unique_key_cols }} IS NULL AND mb.{{ unique_key_cols }} IS NULL))
+       {% else %}
+         {% for col in unique_key_cols %}
+           (src.{{ col }} = mb.{{ col }} OR (src.{{ col }} IS NULL AND mb.{{ col }} IS NULL)){% if not loop.last %} AND {% endif %}
+         {% endfor %}
+       {% endif %}
+    AND bs.batch_seq = mb.max_batch_seq
+{% endmacro %}

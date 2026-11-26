@@ -76,12 +76,13 @@ MARKETING_SCHEMA = StructType(
 )
 
 
-def _create_bronze_table_if_not_exists(spark: SparkSession) -> None:
-    """Đảm bảo schema hive.bronze và bảng Iceberg hive.bronze.marketing_leads đã tồn tại."""
-    spark.sql("CREATE DATABASE IF NOT EXISTS hive.bronze")
+def _create_bronze_table_if_not_exists(spark: SparkSession, target_table: str = TARGET_TABLE) -> None:
+    """Đảm bảo schema hive.bronze (trỏ đúng LOCATION MinIO) và bảng Iceberg đã tồn tại."""
+    warehouse_base = os.getenv("WAREHOUSE_PATH", "s3a://lakehouse/").rstrip("/")
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS hive.bronze LOCATION '{warehouse_base}/bronze'")
     spark.sql(
-        """
-        CREATE TABLE IF NOT EXISTS hive.bronze.marketing_leads (
+        f"""
+        CREATE TABLE IF NOT EXISTS hive.bronze.{target_table} (
             mql_id STRING,
             first_contact_date STRING,
             landing_page_id STRING,
@@ -152,7 +153,7 @@ def load_bronze_marketing(
     # Thêm 3 cột truy vết bắt buộc theo F03: batch_id, source_file, ingested_at
     bronze_df = add_audit_columns(parsed_df, batch_id=batch_id, source_file=SOURCE_FILE_NAME)
 
-    _create_bronze_table_if_not_exists(spark)
+    _create_bronze_table_if_not_exists(spark, target_table=target_table)
 
     # Ghi đè đúng partition batch_id (idempotent, F04)
     write_bronze_iceberg(bronze_df, table_name=target_table, partition_col="batch_id")

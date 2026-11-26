@@ -1,0 +1,3 @@
+relation,parent_table,child_table,bulk_2016_09_2018_05,batch_2018_06,batch_2018_07,batch_2018_08
+order_reviews_to_orders,orders,order_reviews,2,1,9,0
+clickstream_to_orders,orders,clickstream_events,3,8,20,0
