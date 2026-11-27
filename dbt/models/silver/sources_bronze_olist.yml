@@ -1,0 +1,36 @@
+# ===========================================================================
+# dbt/models/silver/sources_bronze_olist.yml - Khai báo nguồn Bronze Olist CSV
+# Tác giả phụ trách: Kiên | Reviewer: Minh
+# Tham chiếu:
+# - Design Bronze, Silver v2 (Mục III: Nguồn csv - 9 bảng hive.bronze.*)
+# - spark/bronze_csv.py (B-202)
+# Lưu ý: Tách riêng nguồn bronze_olist khỏi bronze_clickstream (Minh)
+#        và bronze_marketing (Hoàng) theo quy tắc hợp nhất nhóm.
+# ===========================================================================
+
+version: 2
+
+sources:
+  - name: bronze_olist
+    description: "Nguồn tầng Bronze của 9 bảng Olist CSV (hive.bronze.*, nạp bởi B-202)"
+    database: hive
+    schema: bronze
+    tables:
+      - name: customers
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_customers_dataset.csv (B-202)"
+      - name: sellers
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_sellers_dataset.csv (B-202)"
+      - name: product_category_translation
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/product_category_name_translation.csv (B-202, đã bỏ BOM)"
+      - name: products
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_products_dataset.csv (B-202)"
+      - name: orders
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_orders_dataset.csv (B-202)"
+      - name: order_items
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_order_items_dataset.csv (B-202)"
+      - name: order_payments
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_order_payments_dataset.csv (B-202)"
+      - name: order_reviews
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_order_reviews_dataset.csv (B-202)"
+      - name: geolocation
+        description: "Bảng Iceberg Bronze nạp từ raw/csv/<batch_id>/olist_geolocation_dataset.csv (B-202)"

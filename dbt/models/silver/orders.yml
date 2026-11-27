@@ -1,0 +1,123 @@
+# ===========================================================================
+# dbt/models/silver/orders.yml - Kiểm thử cho silver.orders (B-309)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: orders
+    description: >
+      Bảng Silver đơn hàng Olist (B-309).
+      Grain: 1 dòng = 1 order_id, giữ bản chụp có batch_seq lớn nhất qua các batch,
+      gắn cờ D1–D7, T1 và lưu truy vết source_file, batch_id của bản chụp được giữ (F17).
+    tests:
+      - orders_no_post_cutoff_timestamps:
+          config:
+            severity: error
+      - orders_approved_not_before_purchase:
+          config:
+            severity: warn
+      - orders_an_expected_counts:
+          config:
+            severity: warn
+      - silver_no_t1_cast_failures:
+          config:
+            severity: warn
+    columns:
+      - name: order_id
+        description: "Khóa chính đơn hàng."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+
+      - name: customer_id
+        description: "Khóa ngoại sang silver.customers."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              to: ref('customers')
+              field: customer_id
+              config:
+                severity: error
+
+      - name: order_status
+        description: "Trạng thái đơn của bản chụp được giữ (8 giá trị trạng thái hợp lệ)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - delivered
+                - shipped
+                - unavailable
+                - canceled
+                - invoiced
+                - processing
+                - created
+                - approved
+              config:
+                severity: error
+
+      - name: order_purchase_timestamp
+        description: "Thời điểm mua đơn hàng (cột bắt buộc mức 1)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: order_approved_at
+        description: "Thời điểm duyệt đơn (NULL nếu chưa xảy ra hoặc thiếu)."
+
+      - name: order_delivered_carrier_date
+        description: "Thời điểm bàn giao hãng vận chuyển (NULL nếu chưa xảy ra hoặc thiếu)."
+
+      - name: order_delivered_customer_date
+        description: "Thời điểm giao tới khách hàng (NULL nếu chưa xảy ra hoặc thiếu)."
+
+      - name: order_estimated_delivery_date
+        description: "Ngày dự kiến giao hàng (mốc kế hoạch, giữ nguyên kể cả sau ngày chốt)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: dq_flag
+        description: "Cờ chất lượng dữ liệu (D1–D7, T1:<cột>); NULL là sạch."
+
+      - name: source_file
+        description: "Tên tệp CSV nguồn của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: orders_rejects
+    description: >
+      Bảng reject mức 1 của silver.orders (B-309): lưu các dòng thiếu order_id
+      hoặc thiếu/hỏng order_purchase_timestamp (trước bước deduplicate).
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
+        tests:
+          - not_null:
+              config:
+                severity: error

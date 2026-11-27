@@ -1,0 +1,110 @@
+# ===========================================================================
+# dbt/models/silver/order_payments.yml - Kiểm thử cho silver.order_payments (B-313)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: order_payments
+    description: >
+      Bảng Silver thanh toán Olist (B-313).
+      Grain: 1 dòng = 1 cặp (order_id, payment_sequential).
+      Gắn cờ P1 (not_defined), P2 (payment_value = 0), P3 (payment_installments = 0), T1
+      và lưu truy vết source_file, batch_id (F17).
+    tests:
+      - composite_key_unique:
+          columns: ['order_id', 'payment_sequential']
+          config:
+            severity: error
+      - order_payments_non_negative_value:
+          config:
+            severity: error
+      - order_payments_an06_expected_counts:
+          config:
+            severity: warn
+      - silver_no_t1_cast_failures:
+          config:
+            severity: warn
+    columns:
+      - name: order_id
+        description: "Mã đơn hàng (một phần khóa ghép; FK cứng sang silver.orders)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              to: ref('orders')
+              field: order_id
+              config:
+                severity: error
+
+      - name: payment_sequential
+        description: "Số thứ tự lần thanh toán trong đơn hàng."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: payment_type
+        description: "Hình thức thanh toán (5 giá trị hợp lệ của nguồn Olist)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - credit_card
+                - boleto
+                - voucher
+                - debit_card
+                - not_defined
+              config:
+                severity: error
+
+      - name: payment_installments
+        description: "Số kỳ trả góp (0 gắn cờ P3)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: payment_value
+        description: "Giá trị thanh toán DECIMAL(10,2), không âm (0 gắn cờ P2)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: dq_flag
+        description: "Cờ chất lượng dữ liệu (P1, P2, P3, T1:<cột>); NULL là sạch."
+
+      - name: source_file
+        description: "Tên tệp CSV nguồn (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch nạp của dòng được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: order_payments_rejects
+    description: >
+      Bảng reject mức 1 của silver.order_payments (B-313): lưu các dòng thiếu/hỏng
+      order_id hoặc payment_sequential.
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
+        tests:
+          - not_null:
+              config:
+                severity: error

@@ -34,3 +34,6 @@ airflow/logs/
 
 # Temporary & scratches
 scratch/
+
+# Coding agent
+.agents/

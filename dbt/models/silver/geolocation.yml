@@ -1,0 +1,109 @@
+# ===========================================================================
+# dbt/models/silver/geolocation.yml - Kiểm thử cho silver.geolocation (B-317)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: geolocation
+    description: >
+      Bảng Silver tọa độ mã bưu chính Olist đã gộp (B-317).
+      Grain: 1 dòng = 1 geolocation_zip_code_prefix (gộp từ 1.000.163 điểm thành 19.015 mã).
+      Không có bảng reject, không có cột dq_flag và source_file; giữ mọi điểm kể cả ngoài khung Brazil.
+    tests:
+      - geolocation_matches_bronze_zips:
+          config:
+            severity: error
+      - geolocation_an12_expected_counts:
+          config:
+            severity: warn
+      - geolocation_out_of_brazil_warn:
+          config:
+            severity: warn
+    columns:
+      - name: geolocation_zip_code_prefix
+        description: "Khóa chính mã bưu chính 5 chữ số dạng chuỗi (chỉ duy nhất sau khi gộp)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+          - zip_code_length_five:
+              config:
+                severity: error
+
+      - name: geolocation_lat
+        description: "Vĩ độ trung bình của mọi điểm thuộc mã bưu chính."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: geolocation_lng
+        description: "Kinh độ trung bình của mọi điểm thuộc mã bưu chính."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: geolocation_city
+        description: "Tên thành phố đã chuẩn hóa xuất hiện nhiều nhất (hòa theo thứ tự chữ cái)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: geolocation_state
+        description: "Mã bang xuất hiện nhiều nhất (hòa theo thứ tự chữ cái)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - AC
+                - AL
+                - AM
+                - AP
+                - BA
+                - CE
+                - DF
+                - ES
+                - GO
+                - MA
+                - MG
+                - MS
+                - MT
+                - PA
+                - PB
+                - PE
+                - PI
+                - PR
+                - RJ
+                - RN
+                - RO
+                - RR
+                - RS
+                - SC
+                - SE
+                - SP
+                - TO
+              config:
+                severity: error
+
+      - name: n_points
+        description: "Số điểm tọa độ gốc ở tầng Bronze đã gộp cho mã bưu chính này."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch nạp của dữ liệu tọa độ (bulk)."
+        tests:
+          - not_null:
+              config:
+                severity: error

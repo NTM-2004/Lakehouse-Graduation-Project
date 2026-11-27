@@ -1,0 +1,105 @@
+# ===========================================================================
+# dbt/models/silver/order_reviews.yml - Kiểm thử cho silver.order_reviews (B-315)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: order_reviews
+    description: >
+      Bảng Silver đánh giá đơn hàng Olist (B-315).
+      Grain: 1 dòng = 1 cặp (review_id, order_id), giữ bản chụp batch_seq lớn nhất,
+      gắn cờ R2 (ngày tạo đánh giá sớm hơn ngày mua theo ngày), T1 và lưu truy vết source_file, batch_id (F17).
+    tests:
+      - composite_key_unique:
+          columns: ['review_id', 'order_id']
+          config:
+            severity: error
+      - order_reviews_orphans_exceed_expected:
+          config:
+            severity: error
+      - order_reviews_orphans_middle_warn:
+          config:
+            severity: warn
+      - order_reviews_score_and_answer_consistency:
+          config:
+            severity: error
+      - order_reviews_no_post_cutoff_timestamps:
+          config:
+            severity: error
+      - order_reviews_answer_not_before_creation:
+          config:
+            severity: warn
+      - order_reviews_an_expected_counts:
+          config:
+            severity: warn
+      - silver_no_t1_cast_failures:
+          config:
+            severity: warn
+    columns:
+      - name: review_id
+        description: "Mã đánh giá (có thể dùng cho nhiều đơn hàng theo AN-08)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: order_id
+        description: "Mã đơn hàng (một phần khóa ghép; kiểm thử mồ côi ngoại lệ theo orphan_expected)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: review_score
+        description: "Điểm đánh giá từ 1 đến 5 (NULL khi đánh giá chưa trả lời)."
+
+      - name: review_comment_title
+        description: "Tiêu đề bình luận (NULL nếu trống)."
+
+      - name: review_comment_message
+        description: "Nội dung bình luận (NULL nếu trống)."
+
+      - name: review_creation_date
+        description: "Ngày tạo đánh giá kiểu DATE (đã bỏ phần giờ)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: review_answer_timestamp
+        description: "Thời điểm khách hàng trả lời đánh giá (NULL khi chưa trả lời)."
+
+      - name: dq_flag
+        description: "Cờ chất lượng dữ liệu (R2, T1:<cột>); NULL là sạch."
+
+      - name: source_file
+        description: "Tên tệp CSV nguồn của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch của bản chụp được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: order_reviews_rejects
+    description: >
+      Bảng reject mức 1 của silver.order_reviews (B-315): lưu các dòng thiếu review_id
+      hoặc order_id (trước bước deduplicate).
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
+        tests:
+          - not_null:
+              config:
+                severity: error

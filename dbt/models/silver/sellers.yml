@@ -1,0 +1,115 @@
+# ===========================================================================
+# dbt/models/silver/sellers.yml - Kiểm thử cho silver.sellers (B-305)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: sellers
+    description: >
+      Bảng Silver người bán Olist (B-305).
+      Grain: 1 dòng = 1 seller_id. Đã chuẩn hóa seller_city theo 4 bước AN-11
+      (không gắn cờ); lưu truy vết source_file và batch_id (F17).
+    tests:
+      - sellers_an11_expected_counts:
+          config:
+            severity: warn
+    columns:
+      - name: seller_id
+        description: "Khóa chính người bán."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+
+      - name: seller_zip_code_prefix
+        description: "Mã bưu chính 5 chữ số dạng chuỗi (giữ số 0 đứng đầu)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - zip_code_length_five:
+              config:
+                severity: error
+
+      - name: seller_city
+        description: "Tên thành phố người bán sau chuẩn hóa AN-11 ('unknown' nếu không chuẩn hóa được)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - seller_city_valid_format:
+              config:
+                severity: error
+
+      - name: seller_state
+        description: "Mã bang Brazil gồm 2 chữ cái (27 bang hợp lệ)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - AC
+                - AL
+                - AM
+                - AP
+                - BA
+                - CE
+                - DF
+                - ES
+                - GO
+                - MA
+                - MG
+                - MS
+                - MT
+                - PA
+                - PB
+                - PE
+                - PI
+                - PR
+                - RJ
+                - RN
+                - RO
+                - RR
+                - RS
+                - SC
+                - SE
+                - SP
+                - TO
+              config:
+                severity: error
+
+      - name: source_file
+        description: "Tên tệp CSV nguồn (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch nạp của dòng được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: sellers_rejects
+    description: >
+      Bảng reject mức 1 của silver.sellers (B-305): lưu các dòng thiếu khóa chính seller_id.
+      Giữ nguyên các cột Bronze và bổ sung cột reject_reason.
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
+        tests:
+          - not_null:
+              config:
+                severity: error

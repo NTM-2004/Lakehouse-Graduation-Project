@@ -1,0 +1,115 @@
+# ===========================================================================
+# dbt/models/silver/customers.yml - Kiểm thử cho silver.customers (B-303)
+# Tác giả phụ trách: Kiên | Reviewer: Minh | Mẫu: M-03
+# ===========================================================================
+
+version: 2
+
+models:
+  - name: customers
+    description: >
+      Bảng Silver khách hàng Olist (B-303).
+      Grain: 1 dòng = 1 customer_id (mỗi đơn một customer_id; người thật nhận diện qua customer_unique_id).
+      Không có cột dq_flag; lưu truy vết source_file và batch_id (F17).
+    columns:
+      - name: customer_id
+        description: "Khóa chính khách hàng theo đơn hàng."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+
+      - name: customer_unique_id
+        description: "Mã nhận diện người mua thật (có thể có nhiều đơn hàng)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: customer_zip_code_prefix
+        description: "Mã bưu chính 5 chữ số dạng chuỗi (giữ số 0 đứng đầu)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - zip_code_length_five:
+              config:
+                severity: error
+
+      - name: customer_city
+        description: "Tên thành phố của khách hàng."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: customer_state
+        description: "Mã bang Brazil gồm 2 chữ cái (27 bang hợp lệ)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - AC
+                - AL
+                - AM
+                - AP
+                - BA
+                - CE
+                - DF
+                - ES
+                - GO
+                - MA
+                - MG
+                - MS
+                - MT
+                - PA
+                - PB
+                - PE
+                - PI
+                - PR
+                - RJ
+                - RN
+                - RO
+                - RR
+                - RS
+                - SC
+                - SE
+                - SP
+                - TO
+              config:
+                severity: error
+
+      - name: source_file
+        description: "Tên tệp CSV nguồn (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: batch_id
+        description: "Tên batch nạp của dòng được giữ (F17)."
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+  - name: customers_rejects
+    description: >
+      Bảng reject mức 1 của silver.customers (B-303): lưu các dòng thiếu khóa chính customer_id.
+      Giữ nguyên các cột Bronze và bổ sung cột reject_reason.
+    tests:
+      - reject_count_zero:
+          config:
+            severity: warn
+    columns:
+      - name: reject_reason
+        description: "Lý do đẩy vào bảng reject mức 1."
+        tests:
+          - not_null:
+              config:
+                severity: error
