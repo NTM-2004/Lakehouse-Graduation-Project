@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
-    <!-- B-009: Hive Metastore Service Configuration -->
-    <!-- Connection to Metastore PostgreSQL DB -->
+    <!-- B-009: Hive Metastore Service Configuration | Owner: Minh | Reviewer: Hoàng -->
+    <!-- Kết nối Metastore PostgreSQL DB (user/password truyền qua SERVICE_OPTS trong docker-compose.yml từ .env) -->
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:postgresql://hive-metastore-db:5432/metastore</value>
@@ -11,27 +11,21 @@
         <name>javax.jdo.option.ConnectionDriverName</name>
         <value>org.postgresql.Driver</value>
     </property>
+
+    <!-- Thư mục warehouse mặc định trên MinIO (tránh Dremio rơi về file:/user/hive/warehouse/) -->
     <property>
-        <name>javax.jdo.option.ConnectionUserName</name>
-        <value>${env:HMS_DB_USER}</value>
-    </property>
-    <property>
-        <name>javax.jdo.option.ConnectionPassword</name>
-        <value>${env:HMS_DB_PASSWORD}</value>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>s3a://lakehouse/</value>
     </property>
 
-    <!-- S3A / MinIO Object Storage integration -->
+    <!-- Tích hợp S3A / MinIO (đọc khóa từ biến môi trường AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, đồng bộ spark-defaults.conf) -->
     <property>
         <name>fs.s3a.endpoint</name>
         <value>http://minio:9000</value>
     </property>
     <property>
-        <name>fs.s3a.access.key</name>
-        <value>${env:AWS_ACCESS_KEY_ID}</value>
-    </property>
-    <property>
-        <name>fs.s3a.secret.key</name>
-        <value>${env:AWS_SECRET_ACCESS_KEY}</value>
+        <name>fs.s3a.aws.credentials.provider</name>
+        <value>com.amazonaws.auth.EnvironmentVariableCredentialsProvider</value>
     </property>
     <property>
         <name>fs.s3a.path.style.access</name>

@@ -102,7 +102,10 @@ services:
       - /bin/bash
       - -c
       - |
-        /opt/hive/bin/schematool -dbType postgres -info >/dev/null 2>&1 || /opt/hive/bin/schematool -dbType postgres -initSchema
+        (
+          export HADOOP_CLIENT_OPTS="$${HADOOP_CLIENT_OPTS} $${SERVICE_OPTS}"
+          /opt/hive/bin/schematool -dbType postgres -info >/dev/null 2>&1 || /opt/hive/bin/schematool -dbType postgres -initSchema
+        )
         exec /entrypoint.sh
     volumes:
       - ./jars/hadoop-aws-3.2.0.jar:/opt/hive/lib/hadoop-aws-3.2.0.jar:ro

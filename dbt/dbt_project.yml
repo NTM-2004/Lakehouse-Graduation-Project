@@ -22,8 +22,9 @@ clean-targets:
 # Tham số dùng chung toàn dự án (Requirement v3, Design Bronze/Silver v2, Design Gold v2)
 vars:
   # Ngày chốt dữ liệu (Cutoff date): việc sau ngày này coi như chưa xảy ra
+  # Dremio 25.0 Gandiva hỗ trợ tối đa 3 chữ số mili-giây (.999)
   cutoff_date: '2018-08-31'
-  cutoff_timestamp: '2018-08-31 23:59:59.999999'
+  cutoff_timestamp: '2018-08-31 23:59:59.999'
 
   # Ngưỡng cờ mẫu nhỏ (is_small_sample)
   small_sample_orders: 100    # Tháng có dưới 100 đơn hợp lệ
@@ -33,19 +34,22 @@ vars:
   batch_id: '2018-08'
   final_batch_id: '2018-08'
 
-# Khai báo cách vật hóa mặc định cho từng tầng dữ liệu
+# Khai báo cách vật hóa mặc định cho từng tầng dữ liệu (T-03: twin_strategy=allow do datalake và database cùng là hive)
 models:
   lakehouse:
     silver:
       +materialized: table
       +schema: silver
+      +twin_strategy: allow
     gold:
       +materialized: table
       +schema: gold
+      +twin_strategy: allow
 
 seeds:
   lakehouse:
     +schema: silver
+    +twin_strategy: allow
     batch_seq:
       +column_types:
         batch_id: varchar

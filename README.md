@@ -84,12 +84,14 @@ Thực hiện thủ công sau khi container `dremio` đạt trạng thái `healt
 2. Tạo nguồn dữ liệu Hive (**Add Source → Hive 3.x**):
    - **Tên nguồn chính xác:** `hive` *(bắt buộc khớp `DREMIO_CATALOG=hive` trong `.env`, `dbt/profiles.yml` và `streamlit/dremio_client.py`)*.
    - **Hive Metastore Host:** `hive-metastore`, **Port:** `9083`.
-   - **Connection Properties (Advanced Options):**
-     - `fs.s3a.endpoint` = `http://minio:9000`
+   - **Connection Properties (Advanced Options — tương thích MinIO trên Dremio 25.0, T-03):**
+     - `fs.s3a.endpoint` = `minio:9000` *(không có tiền tố `http://`)*
      - `fs.s3a.access.key` = `<giá trị S3_ACCESS_KEY trong .env>`
      - `fs.s3a.secret.key` = `<giá trị S3_SECRET_KEY trong .env>`
      - `fs.s3a.path.style.access` = `true`
      - `fs.s3a.connection.ssl.enabled` = `false`
+     - `fs.s3a.aws.credentials.provider` = `org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider`
+     - `dremio.s3.compat` = `true`
 3. **Danh sách Raw Reflection cần tạo** *(chỉ tạo sau khi tầng Gold đã có dữ liệu — Design Serving: Reflection)*:
    Chỉ tạo **Raw Reflection** (bản sao tính sẵn của bảng, giữ toàn bộ cột) cho đúng **7 bảng Gold** xuất hiện ở truy vấn chuẩn Q1–Q5, không tạo cho bảng khác:
    | Bảng Gold (`hive.gold.*`) | Tên Reflection quy ước | Phục vụ truy vấn |

@@ -1,20 +1,20 @@
 flag_id,table_name,condition,an_id,kpi_impact
-D1,orders,"Trạng thái delivered, không có ngày giao khách",AN-03,Loại khỏi KPI giao hàng
-D2,orders,"Trạng thái khác delivered, có ngày giao khách",AN-03,Loại khỏi KPI giao hàng
-D3,orders,Ngày giao hãng sớm hơn ngày mua,AN-02,Không loại
-D4,orders,Ngày giao khách sớm hơn ngày giao hãng,AN-01,Loại khỏi KPI giao hàng
-D5,orders,"delivered, không có ngày duyệt",AN-03,Không loại
-D6,orders,Ngày giao hãng sớm hơn ngày duyệt,AN-02,Không loại
-D7,orders,"delivered, không có ngày giao hãng",AN-03,Không loại
-I1,order_items,Hạn giao hãng cách ngày mua LỚN HƠN 148 ngày lịch,AN-05,Không loại
-P1,order_payments,Loại thanh toán not_defined,AN-06,Không loại
-P2,order_payments,payment_value bằng 0,AN-06,Không loại
-P3,order_payments,Số kỳ trả góp bằng 0,AN-06,Không loại
-R2,order_reviews,Ngày tạo đánh giá sớm hơn ngày mua (so theo ngày),AN-09,Loại khỏi Điểm đánh giá trung bình
-PR1,products,Không có danh mục,AN-10,Không loại
-PR2,products,Cân nặng bằng 0 (giá trị thành NULL),AN-10,Không loại
-PR3,products,Thiếu ít nhất một kích thước,AN-10,Không loại
-C1,leads,Ngày chốt deal sớm hơn ngày liên hệ đầu (so theo ngày),AN-13,Loại khỏi KPI thời gian chốt
-E1,clickstream_events,event_ts lớn hơn event_ts của sự kiện purchase cùng phiên,AN-15,Không loại
-E2,clickstream_events,"Cùng phiên, cùng event_ts với một sự kiện khác",AN-15,Không loại
-T1,mọi bảng,Có giá trị nhưng không ép được kiểu,Không thuộc AN,"Không loại; giá trị NULL bị bỏ khi tính"
+D1,orders,"Trang thai delivered, khong co ngay giao khach",AN-03,Loai khoi KPI giao hang
+D2,orders,"Trang thai khac delivered, co ngay giao khach",AN-03,Loai khoi KPI giao hang
+D3,orders,Ngay giao hang som hon ngay mua,AN-02,Khong loai
+D4,orders,Ngay giao khach som hon ngay giao hang,AN-01,Loai khoi KPI giao hang
+D5,orders,"delivered, khong co ngay duyet",AN-03,Khong loai
+D6,orders,Ngay giao hang som hon ngay duyet,AN-02,Khong loai
+D7,orders,"delivered, khong co ngay giao hang",AN-03,Khong loai
+I1,order_items,Han giao hang cach ngay mua LON HON 148 ngay lich,AN-05,Khong loai
+P1,order_payments,Loai thanh toan not_defined,AN-06,Khong loai
+P2,order_payments,payment_value bang 0,AN-06,Khong loai
+P3,order_payments,So ky tra gop bang 0,AN-06,Khong loai
+R2,order_reviews,Ngay tao danh gia som hon ngay mua (so theo ngay),AN-09,Loai khoi Diem danh gia trung binh
+PR1,products,Khong co danh muc,AN-10,Khong loai
+PR2,products,Can nang bang 0 (gia tri thanh NULL),AN-10,Khong loai
+PR3,products,Thieu it nhat mot kich thuoc,AN-10,Khong loai
+C1,leads,Ngay chot deal som hon ngay lien he dau (so theo ngay),AN-13,Loai khoi KPI thoi gian chot
+E1,clickstream_events,event_ts lon hon event_ts cua su kien purchase cung phien,AN-15,Khong loai
+E2,clickstream_events,"Cung phien, cung event_ts voi mot su kien khac",AN-15,Khong loai
+T1,moi bang,Co gia tri nhung khong ep duoc kieu,Khong thuoc AN,"Khong loai; gia tri NULL bi bo khi tinh"
