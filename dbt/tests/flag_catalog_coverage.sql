@@ -68,7 +68,7 @@ unknown_flags_in_silver AS (
     FROM normalized_silver_flags nf
     LEFT JOIN {{ ref('flag_catalog') }} fc
         ON nf.norm_flag = fc.flag_id
-       AND (fc.table_name = nf.table_name OR fc.table_name = 'mọi bảng')
+       AND (fc.table_name = nf.table_name OR fc.table_name = 'moi bang')
     WHERE fc.flag_id IS NULL
 ),
 

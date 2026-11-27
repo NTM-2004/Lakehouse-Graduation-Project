@@ -8,7 +8,7 @@
 {% endmacro %}
 
 {% macro get_cutoff_timestamp() %}
-  '{{ var("cutoff_timestamp", "2018-08-31 23:59:59.999999") }}'
+  '{{ var("cutoff_timestamp", "2018-08-31 23:59:59.999") }}'
 {% endmacro %}
 
 {# Kiểm tra batch cuối: trả về True/False trong Jinja hoặc biểu thức boolean trong SQL #}

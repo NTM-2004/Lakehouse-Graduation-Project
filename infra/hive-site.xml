@@ -12,6 +12,12 @@
         <value>org.postgresql.Driver</value>
     </property>
 
+    <!-- Thư mục warehouse mặc định trên MinIO (tránh Dremio rơi về file:/user/hive/warehouse/) -->
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>s3a://lakehouse/</value>
+    </property>
+
     <!-- Tích hợp S3A / MinIO (đọc khóa từ biến môi trường AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, đồng bộ spark-defaults.conf) -->
     <property>
         <name>fs.s3a.endpoint</name>
