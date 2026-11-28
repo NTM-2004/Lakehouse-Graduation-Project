@@ -18,6 +18,9 @@ models:
       - products_an10_expected_counts:
           config:
             severity: warn
+      - translation_an10_missing_categories:
+          config:
+            severity: warn
       - silver_no_t1_cast_failures:
           config:
             severity: warn

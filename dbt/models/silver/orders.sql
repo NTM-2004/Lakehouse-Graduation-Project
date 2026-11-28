@@ -100,7 +100,7 @@ SELECT
     order_estimated_delivery_date,
     {{ build_dq_flag([
         ("D1", "order_status = 'delivered' AND order_delivered_customer_date IS NULL"),
-        ("D2", "order_status != 'delivered' AND order_delivered_customer_date IS NOT NULL"),
+        ("D2", "COALESCE(order_status, '') != 'delivered' AND order_delivered_customer_date IS NOT NULL"),
         ("D3", "order_delivered_carrier_date IS NOT NULL AND order_delivered_carrier_date < order_purchase_timestamp"),
         ("D4", "order_delivered_customer_date IS NOT NULL AND order_delivered_carrier_date IS NOT NULL AND order_delivered_customer_date < order_delivered_carrier_date"),
         ("D5", "order_status = 'delivered' AND order_approved_at IS NULL"),

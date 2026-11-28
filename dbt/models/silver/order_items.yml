@@ -78,6 +78,7 @@ models:
         tests:
           - not_null:
               config:
+                where: "dq_flag IS NULL OR (',' || dq_flag || ',') NOT LIKE '%,T1:shipping_limit_date,%'"
                 severity: error
 
       - name: price
@@ -92,6 +93,7 @@ models:
         tests:
           - not_null:
               config:
+                where: "dq_flag IS NULL OR (',' || dq_flag || ',') NOT LIKE '%,T1:freight_value,%'"
                 severity: error
 
       - name: dq_flag

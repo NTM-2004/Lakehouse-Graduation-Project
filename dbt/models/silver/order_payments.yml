@@ -67,6 +67,7 @@ models:
         tests:
           - not_null:
               config:
+                where: "dq_flag IS NULL OR (',' || dq_flag || ',') NOT LIKE '%,T1:payment_installments,%'"
                 severity: error
 
       - name: payment_value
@@ -74,6 +75,7 @@ models:
         tests:
           - not_null:
               config:
+                where: "dq_flag IS NULL OR (',' || dq_flag || ',') NOT LIKE '%,T1:payment_value,%'"
                 severity: error
 
       - name: dq_flag

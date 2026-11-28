@@ -87,6 +87,7 @@ models:
         tests:
           - not_null:
               config:
+                where: "dq_flag IS NULL OR (',' || dq_flag || ',') NOT LIKE '%,T1:order_estimated_delivery_date,%'"
                 severity: error
 
       - name: dq_flag

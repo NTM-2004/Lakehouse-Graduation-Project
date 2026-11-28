@@ -10,10 +10,7 @@ models:
     description: >
       Bảng Silver bản dịch danh mục sản phẩm tiếng Bồ Đào Nha sang tiếng Anh (B-301).
       Grain: 1 dòng = 1 product_category_name. Không có cột dq_flag; không tự bổ sung bản dịch thiếu.
-    tests:
-      - translation_an10_missing_categories:
-          config:
-            severity: warn
+      (Kiểm thử AN-10 đếm 2 danh mục thiếu bản dịch đặt tại products.yml để giữ phụ thuộc DAG một chiều.)
     columns:
       - name: product_category_name
         description: "Khóa chính tên danh mục tiếng Bồ Đào Nha (đã bỏ BOM ở tầng Bronze)."

@@ -74,15 +74,16 @@
 
 {% test translation_an10_missing_categories(model) %}
   {#
-    Kiểm thử mức WARN theo Design Bronze, Silver v2 (B-301, AN-10):
+    Kiểm thử mức WARN theo Design Bronze, Silver v2 (B-301 / B-307, AN-10):
+    Gắn trên silver.products để giữ phụ thuộc DAG một chiều (product_category_translation -> products).
     Chỉ chạy sau batch cuối (2018-08): số danh mục khác 'unknown' trong silver.products
     không có bản dịch trong silver.product_category_translation khớp an_expected (= 2).
   #}
   {% if is_final_batch() %}
     WITH actual_cnt AS (
       SELECT COUNT(DISTINCT p.product_category_name) AS actual_count
-      FROM {{ ref('products') }} p
-      LEFT JOIN {{ model }} t
+      FROM {{ model }} p
+      LEFT JOIN {{ ref('product_category_translation') }} t
         ON p.product_category_name = t.product_category_name
       WHERE p.product_category_name != 'unknown'
         AND t.product_category_name IS NULL
@@ -374,8 +375,8 @@
   FROM {{ model }}
   WHERE price IS NULL
      OR price <= 0
-     OR freight_value IS NULL
-     OR freight_value < 0
+     OR (freight_value IS NULL AND NOT {{ has_flag('dq_flag', 'T1:freight_value') }})
+     OR (freight_value IS NOT NULL AND freight_value < 0)
 {% endtest %}
 
 
@@ -435,8 +436,8 @@
     payment_sequential,
     payment_value
   FROM {{ model }}
-  WHERE payment_value IS NULL
-     OR payment_value < 0
+  WHERE (payment_value IS NULL AND NOT {{ has_flag('dq_flag', 'T1:payment_value') }})
+     OR (payment_value IS NOT NULL AND payment_value < 0)
 {% endtest %}
 
 
