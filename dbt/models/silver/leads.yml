@@ -66,18 +66,17 @@ models:
               config:
                 severity: error
           - accepted_values:
-              arguments:
-                values:
-                  - organic_search
-                  - paid_search
-                  - social
-                  - unknown
-                  - direct_traffic
-                  - email
-                  - referral
-                  - other
-                  - display
-                  - other_publicities
+              values:
+                - organic_search
+                - paid_search
+                - social
+                - unknown
+                - direct_traffic
+                - email
+                - referral
+                - other
+                - display
+                - other_publicities
               config:
                 severity: error
 
@@ -96,9 +95,8 @@ models:
                 where: "seller_id IS NOT NULL"
                 severity: warn
           - relationships:
-              arguments:
-                to: ref('sellers')
-                field: seller_id
+              to: ref('sellers')
+              field: seller_id
               config:
                 where: "seller_id IS NOT NULL"
                 severity: warn

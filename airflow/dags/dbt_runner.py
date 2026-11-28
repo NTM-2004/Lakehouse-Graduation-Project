@@ -114,6 +114,7 @@ def _run_dbt_cli(
     cmd = [
         DBT_BIN,
         *subcommand,
+        "--no-partial-parse",
         "--project-dir",
         project_dir,
         "--profiles-dir",
@@ -245,23 +246,23 @@ def run_dbt_gold(
             failed_model=target,
         )
 
-    # Chặng 1: Dimensions
+    # Chặng 1: Dimensions (dùng --indirect-selection empty để tránh kéo singular test liên bảng trước khi dựng KPI)
     _run_dbt_cli(
-        ["build", "--select", *GOLD_DIMENSIONS, "--fail-fast"],
+        ["build", "--select", *GOLD_DIMENSIONS, "--indirect-selection", "empty", "--fail-fast"],
         batch_id=batch_id,
         project_dir=project_dir,
         profiles_dir=profiles_dir,
     )
-    # Chặng 2: Facts
+    # Chặng 2: Facts (dùng --indirect-selection empty để tránh kéo gold_gt01/gt11/gt12 đọc KPI ở Chặng 3)
     _run_dbt_cli(
-        ["build", "--select", *GOLD_FACTS, "--fail-fast"],
+        ["build", "--select", *GOLD_FACTS, "--indirect-selection", "empty", "--fail-fast"],
         batch_id=batch_id,
         project_dir=project_dir,
         profiles_dir=profiles_dir,
     )
-    # Chặng 3: KPIs + Kiểm thử liên bảng Gold (GT-01..GT-15)
+    # Chặng 3: KPIs (sau đó Chặng 4 chạy trọn bộ kiểm thử liên bảng Gold GT-01..GT-15)
     _run_dbt_cli(
-        ["build", "--select", *GOLD_KPIS, "--fail-fast"],
+        ["build", "--select", *GOLD_KPIS, "--indirect-selection", "empty", "--fail-fast"],
         batch_id=batch_id,
         project_dir=project_dir,
         profiles_dir=profiles_dir,

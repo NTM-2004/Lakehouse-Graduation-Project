@@ -23,7 +23,6 @@ from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
-CUTOFF_DATE_STR = "2018-08-31"
 CUTOFF_DATE = date(2018, 8, 31)
 START_DATE = date(2016, 9, 4)
 
