@@ -52,8 +52,12 @@ def _query_dremio_table(table_name: str, catalog: str = "hive", schema: str = "g
 
     host = os.getenv("DREMIO_HOST", "localhost")
     port = os.getenv("DREMIO_PORT", "9047")
-    user = os.getenv("DREMIO_ADMIN_USER", "admin")
-    password = os.getenv("DREMIO_ADMIN_PASSWORD", "admin12345")
+    user = os.getenv("DREMIO_ADMIN_USER", "").strip()
+    password = os.getenv("DREMIO_ADMIN_PASSWORD", "").strip()
+    if not user or not password:
+        raise RuntimeError(
+            "Thiếu biến môi trường DREMIO_ADMIN_USER hoặc DREMIO_ADMIN_PASSWORD."
+        )
     base_url = f"http://{host}:{port}"
 
     session = requests.Session()

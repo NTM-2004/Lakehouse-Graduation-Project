@@ -24,13 +24,6 @@ BATCH_2018_08 = "2018-08"
 
 BATCH_NAMES = [BATCH_BULK, BATCH_2018_06, BATCH_2018_07, BATCH_2018_08]
 
-BATCH_MAPPING = {
-    "bulk": BATCH_BULK,
-    "2018-06": BATCH_2018_06,
-    "2018-07": BATCH_2018_07,
-    "2018-08": BATCH_2018_08,
-}
-
 
 def get_batch_id_by_event_timestamp(ts_str: str) -> Optional[str]:
     """
